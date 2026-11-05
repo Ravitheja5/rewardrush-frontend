@@ -1,0 +1,65 @@
+{
+  "common": {
+    "points": "Points",
+    "pts": "pts",
+    "claim": "Claim",
+    "completed": "Completed",
+    "pending": "Pending",
+    "available": "Available",
+    "redeem": "Redeem",
+    "copied": "Copied to clipboard!",
+    "errorOccurred": "An error occurred",
+    "retry": "Retry",
+    "loading": "Loading...",
+    "disclaimer": "Rewards depend on available partner offers and are not guaranteed."
+  },
+  "nav": {
+    "home": "Home",
+    "tasks": "Tasks",
+    "store": "Store",
+    "vault": "Vault",
+    "profile": "Profile"
+  },
+  "home": {
+    "walletBalance": "Available Points",
+    "pendingVerification": "Pending Points",
+    "pendingTooltip": "Pending points are verified by partners within 24-72 hours.",
+    "lifetimeEarned": "Lifetime Earned",
+    "nextReward": "to 1GB Data Booster",
+    "live": "LIVE",
+    "streakTitle": "7-Day Check-in Streak",
+    "streakReset": "Resets daily at 00:00 IST",
+    "claimStreak": "Claim +15 pts",
+    "streakClaimed": "Claimed today",
+    "mysteryTitle": "Daily Mystery Drop",
+    "scratchPrompt": "Scratch canvas to reveal your drop",
+    "quickTasks": "Featured High-Yield Tasks",
+    "viewAll": "See All"
+  },
+  "tasks": {
+    "offers": "Offers",
+    "surveys": "Surveys",
+    "videos": "Watch & Earn",
+    "history": "Activity Ledger",
+    "dailyCap": "Watched today",
+    "cooldown": "Next ad in"
+  },
+  "store": {
+    "title": "Rewards Catalog",
+    "subtitle": "Convert points to mobile data boosters and meal vouchers",
+    "all": "All",
+    "data": "1GB Data Boosters",
+    "food": "Food Vouchers",
+    "needed": "pts more needed",
+    "confirmRedeem": "Confirm Redemption",
+    "mobileNumber": "Mobile Number (10 Digits)",
+    "operator": "Operator"
+  },
+  "vault": {
+    "title": "Encrypted Vault",
+    "subtitle": "Digital vouchers & mobile data pack records",
+    "privacy": "Codes are encrypted and only accessible on your authenticated device.",
+    "reveal": "Tap eye icon to reveal code for 10s",
+    "howToUse": "How to use"
+  }
+}
