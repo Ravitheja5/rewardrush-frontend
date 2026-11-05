@@ -16,6 +16,13 @@ export const getLoggedInUser = () => {
   return user ? JSON.parse(user) : null;
 };
 
+// Fallback to prevent any build breakage
+export const getAllUsers = () => {
+  if (typeof window === 'undefined') return {};
+  const user = getLoggedInUser();
+  return user ? { [user.phone]: user } : {};
+};
+
 export const registerUser = async (phone, password) => {
   const deviceId = getDeviceId();
   try {
