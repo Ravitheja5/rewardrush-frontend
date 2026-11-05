@@ -41,7 +41,7 @@ export default function TasksPage() {
         clearInterval(checkClosedIntervalRef.current);
         setActiveTimerTask(null);
         setTimeLeft(0);
-        setAlertMsg('❌ టాస్క్ విఫలమైంది: మీరు ప్రకటన పేజీని సమయం కంటే ముందే క్లోజ్ చేశారు! పాయింట్లు లభించవు.');
+        setAlertMsg('❌ టాస్క్ విఫలమైంది: మీరు స్పాన్సర్ పేజీని సమయం కంటే ముందే క్లోజ్ చేశారు! పాయింట్లు లభించవు.');
       }
     }, 500);
 
@@ -61,7 +61,7 @@ export default function TasksPage() {
     savedUser.points = (savedUser.points || 265) + task.points;
     localStorage.setItem('rewardUser', JSON.stringify(savedUser));
 
-    setAlertMsg(`🎉 అభినందనలు! టాస్క్ విజయవంతమైంది. +${task.points} పాయింట్లు క్రెడిట్ అయ్యాయి.`);
+    setAlertMsg(`🎉 అభినందనలు! "${task.title}" పూర్తయింది. +${task.points} పాయింట్లు క్రెడిట్ అయ్యాయి.`);
     setActiveTimerTask(null);
     sponsorWindowRef.current = null;
   };
@@ -71,20 +71,32 @@ export default function TasksPage() {
       id: 'task-monetag-1',
       title: 'Quick Sponsor Visit #1',
       category: 'Instant',
-      badge: 'Live Offer',
+      badge: 'Monetag Active',
       points: 40,
       durationSec: 20,
       time: '20 secs',
-      desc: 'ప్రకటన పేజీని 20 సెకన్ల పాటు క్లోజ్ చేయకుండా ఉంచండి.',
+      desc: 'ప్రకటన పేజీని 20 సెకన్ల పాటు క్లోజ్ చేయకుండా పరిశీలించండి.',
       url: 'https://uplcm.com/4/12198373',
       type: 'web'
     },
     {
-      id: 'task-monetag-2',
-      title: 'Premium Sponsor Discovery #2',
+      id: 'task-adsterra-1',
+      title: 'Global Sponsor Discovery #2',
       category: 'Instant',
-      badge: 'High Yield',
-      points: 75,
+      badge: 'Adsterra Active',
+      points: 70,
+      durationSec: 30,
+      time: '30 secs',
+      desc: 'ప్రీమియం గ్లోబల్ స్పాన్సర్ డీల్స్‌ను 30 సెకన్లు క్లోజ్ చేయకుండా బ్రౌజ్ చేయండి.',
+      url: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30',
+      type: 'web'
+    },
+    {
+      id: 'task-monetag-2',
+      title: 'High-Yield Sponsor Showcase #3',
+      category: 'Instant',
+      badge: 'Monetag Active',
+      points: 85,
       durationSec: 35,
       time: '35 secs',
       desc: 'ట్రెండింగ్ స్పాన్సర్ ఆఫర్‌ను 35 సెకన్ల పాటు బ్రౌజ్ చేయండి.',
@@ -93,32 +105,31 @@ export default function TasksPage() {
     },
     {
       id: 'task-yt-1',
-      title: 'Watch & Learn: Stock Basics',
+      title: 'Watch & Learn: Investment Guides',
       category: 'Video',
-      badge: 'Watch Earn',
-      points: 60,
-      durationSec: 45,
-      time: '45 secs',
-      desc: 'గైడ్‌ను 45 సెకన్ల పాటు నిరంతరంగా వీక్షించండి.',
-      url: 'https://uplcm.com/4/12198373',
+      badge: 'Educational',
+      points: 50,
+      durationSec: 40,
+      time: '40 secs',
+      desc: 'స్మార్ట్ ఇన్వెస్ట్‌మెంట్ గైడ్ వీడియోను వీక్షించండి.',
+      url: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30',
       type: 'video'
     }
   ];
 
   const filtered = filter === 'ALL'
     ? tasksList
-    : tasksList.filter(t => t.category.toLowerCase() === filter.toLowerCase() || t.badge.toLowerCase() === filter.toLowerCase());
+    : tasksList.filter(t => t.category.toLowerCase() === filter.toLowerCase() || t.badge.toLowerCase().includes(filter.toLowerCase()));
 
   const startTask = (task) => {
     if (completedTasks.includes(task.id)) return;
 
-    // Open advertiser in popup window reference
     const win = window.open(task.url, '_blank', 'noopener=false');
     sponsorWindowRef.current = win;
 
     setActiveTimerTask(task);
     setTimeLeft(task.durationSec);
-    setAlertMsg(`⏳ వెరిఫికేషన్ నడుస్తోంది... దయచేసి ప్రకటన ట్యాబ్‌ను ${task.durationSec} సెకన్ల పాటు క్లోజ్ చేయవద్దు.`);
+    setAlertMsg(`⏳ వెరిఫికేషన్ నడుస్తోంది... దయచేసి స్పాన్సర్ పేజీని ${task.durationSec} సెకన్ల పాటు క్లోజ్ చేయవద్దు.`);
   };
 
   return (
@@ -131,10 +142,10 @@ export default function TasksPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold text-[#F8FAFC]">Available Tasks</h1>
           <span className="px-2.5 py-1 bg-[#34D399]/10 border border-[#34D399]/20 text-[#34D399] text-[11px] font-medium rounded-full">
-            ● యాంటీ-చీట్ వెరిఫైడ్
+            ● 2 Networks Active
           </span>
         </div>
-        <p className="text-xs text-[#A1A8B8] mt-0.5">పేజీ క్లోజ్ చేయకుండా నిర్దేశిత సమయం పూర్తి చేసి పాయింట్లు పొందండి</p>
+        <p className="text-xs text-[#A1A8B8] mt-0.5">మల్టీ-నెట్‌వర్క్ స్పాన్సర్ ఆఫర్లను పూర్తి చేసి తక్షణమే వాలెట్ పాయింట్లు సంపాదించండి</p>
       </div>
 
       {alertMsg && (
@@ -149,7 +160,7 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* Timer Progress */}
+      {/* Countdown Timer Display */}
       {timeLeft > 0 && activeTimerTask && (
         <div className="p-4 bg-[#818CF8]/10 border border-[#818CF8]/30 rounded-2xl flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -167,7 +178,7 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* Filter Tabs */}
+      {/* Filters */}
       <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
         {['ALL', 'Instant', 'Video'].map((tab) => (
           <button
@@ -184,7 +195,7 @@ export default function TasksPage() {
         ))}
       </div>
 
-      {/* Tasks List */}
+      {/* Task Cards */}
       <div className="space-y-3">
         {filtered.map((task) => {
           const isDone = completedTasks.includes(task.id);
@@ -202,7 +213,7 @@ export default function TasksPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-[#F8FAFC]">{task.title}</span>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#34D399]/10 text-[#34D399] border border-[#34D399]/20">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#818CF8]/10 text-[#818CF8] border border-[#818CF8]/20">
                     {task.badge}
                   </span>
                 </div>
@@ -222,7 +233,7 @@ export default function TasksPage() {
                     disabled={isCurrent}
                     className="flex items-center gap-1 px-4 py-1.5 bg-[#818CF8] hover:bg-[#6366F1] disabled:bg-[#151B2B] text-white text-xs font-medium rounded-lg transition"
                   >
-                    {isCurrent ? 'పరిశీలిస్తోంది...' : 'Start'} 
+                    {isCurrent ? 'ధృవీకరిస్తోంది...' : 'Start'} 
                     {task.type === 'video' ? <PlayCircle size={12} /> : <ExternalLink size={12} />}
                   </button>
                 )}
