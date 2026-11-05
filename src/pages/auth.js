@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { registerUser, loginUser } from '../utils/auth';
-import { Lock, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
+import { Lock, ShieldCheck, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -10,12 +10,18 @@ export default function AuthPage() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
-    const res = isRegister ? registerUser(phone, password) : loginUser(phone, password);
+    const res = isRegister
+      ? await registerUser(phone, password)
+      : await loginUser(phone, password);
+
+    setLoading(false);
 
     if (res.success) {
       router.push('/tasks');
@@ -84,10 +90,17 @@ export default function AuthPage() {
 
           <button
             type="submit"
-            className="w-full py-3 bg-[#818CF8] hover:bg-[#6366F1] text-white font-semibold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-[#818CF8]/20"
+            disabled={loading}
+            className="w-full py-3 bg-[#818CF8] hover:bg-[#6366F1] disabled:bg-[#151B2B] text-white font-semibold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-[#818CF8]/20"
           >
-            {isRegister ? 'Register & Claim ₹1.00 Bonus' : 'Login Securely'}
-            <ArrowRight size={14} />
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : isRegister ? (
+              'Register & Claim ₹1.00 Bonus'
+            ) : (
+              'Login Securely'
+            )}
+            {!loading && <ArrowRight size={14} />}
           </button>
         </form>
 
