@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-import { ExternalLink, CheckCircle2, Clock, PlayCircle } from 'lucide-react';
+import { ExternalLink, CheckCircle2, Clock, PlayCircle, AlertTriangle } from 'lucide-react';
 
 export default function TasksPage() {
   const [filter, setFilter] = useState('ALL');
@@ -8,20 +8,25 @@ export default function TasksPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [completedTasks, setCompletedTasks] = useState([]);
   const [alertMsg, setAlertMsg] = useState('');
+  
+  const sponsorWindowRef = useRef(null);
+  const checkClosedIntervalRef = useRef(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('completed_tasks');
     if (saved) setCompletedTasks(JSON.parse(saved));
   }, []);
 
-  // Countdown Timer Logic
+  // Timer & Window Closed Detection Logic
   useEffect(() => {
     if (timeLeft <= 0 || !activeTimerTask) return;
 
+    // 1. Timer countdown interval
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          clearInterval(checkClosedIntervalRef.current);
           handleTaskCompletion(activeTimerTask);
           return 0;
         }
@@ -29,7 +34,21 @@ export default function TasksPage() {
       });
     }, 1000);
 
-    return () => clearInterval(timer);
+    // 2. Strict Check: If user closes advertiser window before time
+    checkClosedIntervalRef.current = setInterval(() => {
+      if (sponsorWindowRef.current && sponsorWindowRef.current.closed) {
+        clearInterval(timer);
+        clearInterval(checkClosedIntervalRef.current);
+        setActiveTimerTask(null);
+        setTimeLeft(0);
+        setAlertMsg('❌ టాస్క్ విఫలమైంది: మీరు ప్రకటన పేజీని సమయం కంటే ముందే క్లోజ్ చేశారు! పాయింట్లు లభించవు.');
+      }
+    }, 500);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(checkClosedIntervalRef.current);
+    };
   }, [timeLeft, activeTimerTask]);
 
   const handleTaskCompletion = (task) => {
@@ -37,13 +56,14 @@ export default function TasksPage() {
     setCompletedTasks(updated);
     localStorage.setItem('completed_tasks', JSON.stringify(updated));
 
-    // Update Wallet Points in localStorage
+    // Update Points
     const savedUser = JSON.parse(localStorage.getItem('rewardUser') || '{"points": 265}');
     savedUser.points = (savedUser.points || 265) + task.points;
     localStorage.setItem('rewardUser', JSON.stringify(savedUser));
 
-    setAlertMsg(`🎉 Success! Verified: ${task.title}. +${task.points} Points credited.`);
+    setAlertMsg(`🎉 అభినందనలు! టాస్క్ విజయవంతమైంది. +${task.points} పాయింట్లు క్రెడిట్ అయ్యాయి.`);
     setActiveTimerTask(null);
+    sponsorWindowRef.current = null;
   };
 
   const tasksList = [
@@ -55,7 +75,7 @@ export default function TasksPage() {
       points: 40,
       durationSec: 20,
       time: '20 secs',
-      desc: 'Open partner site and explore for 20 seconds to claim instant coins.',
+      desc: 'ప్రకటన పేజీని 20 సెకన్ల పాటు క్లోజ్ చేయకుండా ఉంచండి.',
       url: 'https://uplcm.com/4/12198373',
       type: 'web'
     },
@@ -67,43 +87,19 @@ export default function TasksPage() {
       points: 75,
       durationSec: 35,
       time: '35 secs',
-      desc: 'Browse trending tech and financial deals on sponsor network.',
-      url: 'https://uplcm.com/4/12198373',
-      type: 'web'
-    },
-    {
-      id: 'task-monetag-3',
-      title: 'Partner Showcase Campaign #3',
-      category: 'Instant',
-      badge: 'Live Offer',
-      points: 100,
-      durationSec: 50,
-      time: '50 secs',
-      desc: 'Engage with advertiser showcase landing page to earn big rewards.',
+      desc: 'ట్రెండింగ్ స్పాన్సర్ ఆఫర్‌ను 35 సెకన్ల పాటు బ్రౌజ్ చేయండి.',
       url: 'https://uplcm.com/4/12198373',
       type: 'web'
     },
     {
       id: 'task-yt-1',
-      title: 'Watch & Learn: Stock Market Basics',
+      title: 'Watch & Learn: Stock Basics',
       category: 'Video',
       badge: 'Watch Earn',
       points: 60,
       durationSec: 45,
       time: '45 secs',
-      desc: 'Watch quick educational guide on index funds & smart investment.',
-      url: 'https://uplcm.com/4/12198373',
-      type: 'video'
-    },
-    {
-      id: 'task-yt-2',
-      title: 'Watch & Learn: Top Credit Card Rewards',
-      category: 'Video',
-      badge: 'Watch Earn',
-      points: 80,
-      durationSec: 60,
-      time: '60 secs',
-      desc: 'Complete video overview on lifetime-free cashback credit cards.',
+      desc: 'గైడ్‌ను 45 సెకన్ల పాటు నిరంతరంగా వీక్షించండి.',
       url: 'https://uplcm.com/4/12198373',
       type: 'video'
     }
@@ -116,10 +112,13 @@ export default function TasksPage() {
   const startTask = (task) => {
     if (completedTasks.includes(task.id)) return;
 
-    window.open(task.url, '_blank', 'noopener,noreferrer');
+    // Open advertiser in popup window reference
+    const win = window.open(task.url, '_blank', 'noopener=false');
+    sponsorWindowRef.current = win;
+
     setActiveTimerTask(task);
     setTimeLeft(task.durationSec);
-    setAlertMsg(`⏳ Verifying "${task.title}"... Please keep the sponsor page open for ${task.durationSec}s.`);
+    setAlertMsg(`⏳ వెరిఫికేషన్ నడుస్తోంది... దయచేసి ప్రకటన ట్యాబ్‌ను ${task.durationSec} సెకన్ల పాటు క్లోజ్ చేయవద్దు.`);
   };
 
   return (
@@ -132,26 +131,34 @@ export default function TasksPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold text-[#F8FAFC]">Available Tasks</h1>
           <span className="px-2.5 py-1 bg-[#34D399]/10 border border-[#34D399]/20 text-[#34D399] text-[11px] font-medium rounded-full">
-            ● {tasksList.length} Active Tasks
+            ● యాంటీ-చీట్ వెరిఫైడ్
           </span>
         </div>
-        <p className="text-xs text-[#A1A8B8] mt-0.5">Complete verified visits and videos to earn instant wallet points</p>
+        <p className="text-xs text-[#A1A8B8] mt-0.5">పేజీ క్లోజ్ చేయకుండా నిర్దేశిత సమయం పూర్తి చేసి పాయింట్లు పొందండి</p>
       </div>
 
       {alertMsg && (
-        <div className="p-3 bg-[#101522] border border-[#252C3D] text-xs text-center rounded-xl text-[#F8FAFC]">
+        <div className={`p-3.5 border text-xs text-center rounded-xl font-medium ${
+          alertMsg.includes('❌') 
+            ? 'bg-[#FB7185]/10 border-[#FB7185]/30 text-[#FB7185]'
+            : alertMsg.includes('🎉')
+            ? 'bg-[#34D399]/10 border-[#34D399]/30 text-[#34D399]'
+            : 'bg-[#101522] border-[#252C3D] text-[#F8FAFC]'
+        }`}>
           {alertMsg}
         </div>
       )}
 
-      {/* Timer Progress Banner */}
+      {/* Timer Progress */}
       {timeLeft > 0 && activeTimerTask && (
         <div className="p-4 bg-[#818CF8]/10 border border-[#818CF8]/30 rounded-2xl flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Clock className="text-[#818CF8] animate-spin" size={20} />
             <div>
               <h4 className="text-sm font-semibold text-[#F8FAFC]">{activeTimerTask.title}</h4>
-              <p className="text-xs text-[#A1A8B8]">Verifying your active stay... please wait</p>
+              <p className="text-xs text-[#FB7185] flex items-center gap-1 mt-0.5">
+                <AlertTriangle size={12} /> ట్యాబ్ క్లోజ్ చేస్తే పాయింట్లు రద్దు చేయబడతాయి!
+              </p>
             </div>
           </div>
           <div className="text-right">
@@ -177,7 +184,7 @@ export default function TasksPage() {
         ))}
       </div>
 
-      {/* Task Cards List */}
+      {/* Tasks List */}
       <div className="space-y-3">
         {filtered.map((task) => {
           const isDone = completedTasks.includes(task.id);
@@ -200,14 +207,14 @@ export default function TasksPage() {
                   </span>
                 </div>
                 <p className="text-xs text-[#727C91]">{task.desc}</p>
-                <span className="text-[11px] text-[#A1A8B8] block">⏱ Required: {task.time}</span>
+                <span className="text-[11px] text-[#A1A8B8] block">⏱ సమయం: {task.time}</span>
               </div>
 
               <div className="text-right flex flex-col items-end gap-2 shrink-0">
                 <span className="text-xs font-semibold text-[#F5B942] tabular-nums">+{task.points} pts</span>
                 {isDone ? (
                   <span className="flex items-center gap-1 text-xs text-[#34D399] font-medium px-3 py-1.5 bg-[#34D399]/10 rounded-lg">
-                    <CheckCircle2 size={13} /> Completed
+                    <CheckCircle2 size={13} /> పూర్తయింది
                   </span>
                 ) : (
                   <button
@@ -215,7 +222,7 @@ export default function TasksPage() {
                     disabled={isCurrent}
                     className="flex items-center gap-1 px-4 py-1.5 bg-[#818CF8] hover:bg-[#6366F1] disabled:bg-[#151B2B] text-white text-xs font-medium rounded-lg transition"
                   >
-                    {isCurrent ? 'Verifying...' : 'Start'} 
+                    {isCurrent ? 'పరిశీలిస్తోంది...' : 'Start'} 
                     {task.type === 'video' ? <PlayCircle size={12} /> : <ExternalLink size={12} />}
                   </button>
                 )}
