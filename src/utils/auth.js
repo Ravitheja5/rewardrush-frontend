@@ -1,67 +1,50 @@
+import { apiRequest } from './api';
+
 export const getDeviceId = () => {
   if (typeof window === 'undefined') return '';
-  let deviceId = localStorage.getItem('rr_device_id');
-  if (!deviceId) {
-    deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-    localStorage.setItem('rr_device_id', deviceId);
+  let id = localStorage.getItem('rr_device_id');
+  if (!id) {
+    id = 'dev_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+    localStorage.setItem('rr_device_id', id);
   }
-  return deviceId;
+  return id;
 };
 
 export const getLoggedInUser = () => {
   if (typeof window === 'undefined') return null;
-  const session = localStorage.getItem('rr_user_session');
-  return session ? JSON.parse(session) : null;
+  const user = localStorage.getItem('rr_user_session');
+  return user ? JSON.parse(user) : null;
 };
 
 export const registerUser = async (phone, password) => {
   const deviceId = getDeviceId();
   try {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, password, deviceId })
-    });
-    const data = await res.json();
-    if (data.success) {
-      localStorage.setItem('rr_user_session', JSON.stringify(data.user));
+    const res = await apiRequest('/api/auth/register', 'POST', { phone, password, deviceId });
+    if (res.success) {
+      localStorage.setItem('rr_user_session', JSON.stringify(res.user));
     }
-    return data;
+    return res;
   } catch (err) {
-    return { success: false, message: 'Network error. Try again.' };
+    return { success: false, message: 'Server connection error' };
   }
 };
 
 export const loginUser = async (phone, password) => {
   try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, password })
-    });
-    const data = await res.json();
-    if (data.success) {
-      localStorage.setItem('rr_user_session', JSON.stringify(data.user));
+    const res = await apiRequest('/api/auth/login', 'POST', { phone, password });
+    if (res.success) {
+      localStorage.setItem('rr_user_session', JSON.stringify(res.user));
     }
-    return data;
+    return res;
   } catch (err) {
-    return { success: false, message: 'Network error. Try again.' };
+    return { success: false, message: 'Server connection error' };
   }
 };
 
-export const updateUserWallet = (pointsToAdd, taskId = null) => {
-  if (typeof window === 'undefined') return null;
-  const user = getLoggedInUser();
-  if (!user) return null;
-
-  user.points = (user.points || 0) + pointsToAdd;
-  user.dailyTaskCount = (user.dailyTaskCount || 0) + 1;
-  if (taskId && !user.completedTasks.includes(taskId)) {
-    user.completedTasks.push(taskId);
+export const syncWallet = (updatedUser) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('rr_user_session', JSON.stringify(updatedUser));
   }
-
-  localStorage.setItem('rr_user_session', JSON.stringify(user));
-  return user;
 };
 
 export const logoutUser = () => {
