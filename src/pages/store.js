@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { getLoggedInUser, getAllUsers } from '../utils/auth';
-import { Zap, ArrowRight } from 'lucide-react';
+import { getLoggedInUser, syncWallet } from '../utils/auth';
+import { apiRequest } from '../utils/api';
+import { Zap, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function StorePage() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function StorePage() {
   const [operator, setOperator] = useState('JIO');
   const [rechargeNumber, setRechargeNumber] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const user = getLoggedInUser();
@@ -21,7 +23,7 @@ export default function StorePage() {
     }
   }, [router]);
 
-  const handleRedeem = (e) => {
+  const handleRedeem = async (e) => {
     e.preventDefault();
     setStatusMsg('');
 
@@ -36,20 +38,26 @@ export default function StorePage() {
       return;
     }
 
-    const users = getAllUsers();
-    users[currentUser.phone].points -= 4900;
-    users[currentUser.phone].claimedRecharges = users[currentUser.phone].claimedRecharges || [];
-    users[currentUser.phone].claimedRecharges.push({
-      amount: 49,
-      operator,
-      number: rechargeNumber,
-      date: new Date().toISOString(),
-      status: 'Processing'
-    });
+    setLoading(true);
+    try {
+      const res = await apiRequest('/api/store/recharge', 'POST', {
+        userId: currentUser.id,
+        phone: rechargeNumber,
+        operator
+      });
 
-    localStorage.setItem('rr_users_db', JSON.stringify(users));
-    setCurrentUser({ ...users[currentUser.phone] });
-    setStatusMsg('🎉 Recharge request submitted! Your ₹49 pack will be activated within 15 minutes.');
+      if (res.success) {
+        const updatedUser = { ...currentUser, points: currentUser.points - 4900 };
+        syncWallet(updatedUser);
+        setCurrentUser(updatedUser);
+        setStatusMsg('🎉 Recharge request submitted! Your ₹49 pack will be activated within 15 minutes.');
+      } else {
+        setStatusMsg(`❌ ${res.message}`);
+      }
+    } catch (err) {
+      setStatusMsg('❌ Server error while processing recharge request.');
+    }
+    setLoading(false);
   };
 
   if (!currentUser) return null;
@@ -131,9 +139,11 @@ export default function StorePage() {
 
           <button
             type="submit"
-            className="w-full py-3 bg-[#34D399] hover:bg-[#10B981] text-[#0A0D14] font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-[#34D399]/20"
+            disabled={loading}
+            className="w-full py-3 bg-[#34D399] hover:bg-[#10B981] disabled:bg-[#151B2B] text-[#0A0D14] font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-[#34D399]/20"
           >
-            Claim ₹49 Instant Recharge <ArrowRight size={14} />
+            {loading ? <Loader2 size={16} className="animate-spin" /> : 'Claim ₹49 Instant Recharge'}
+            {!loading && <ArrowRight size={14} />}
           </button>
         </form>
       </div>
