@@ -1,27 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-import { ExternalLink, CheckCircle2, Clock, PlayCircle, AlertTriangle, X, ShieldCheck, Flame, Gift, Sparkles } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { getLoggedInUser, updateUserWallet, logoutUser } from '../utils/auth';
+import { CheckCircle2, Clock, PlayCircle, ExternalLink, ShieldCheck, LogOut, Lock } from 'lucide-react';
 
 export default function TasksPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState(null);
   const [filter, setFilter] = useState('ALL');
+  const [alertMsg, setAlertMsg] = useState('');
+
   const [activeTimerTask, setActiveTimerTask] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [completedTasks, setCompletedTasks] = useState([]);
-  const [alertMsg, setAlertMsg] = useState('');
-  
-  // Dedicated Video Engine State
+
   const [videoModalTask, setVideoModalTask] = useState(null);
   const [videoTimeLeft, setVideoTimeLeft] = useState(0);
+  const [canCloseVideo, setCanCloseVideo] = useState(false);
 
   const sponsorWindowRef = useRef(null);
   const checkClosedIntervalRef = useRef(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('completed_tasks');
-    if (saved) setCompletedTasks(JSON.parse(saved));
-  }, []);
+    const user = getLoggedInUser();
+    if (!user) {
+      router.push('/auth');
+    } else {
+      setCurrentUser(user);
+    }
+  }, [router]);
 
-  // Web Task Timer Detection
   useEffect(() => {
     if (timeLeft <= 0 || !activeTimerTask) return;
 
@@ -30,7 +37,7 @@ export default function TasksPage() {
         if (prev <= 1) {
           clearInterval(timer);
           clearInterval(checkClosedIntervalRef.current);
-          handleTaskCompletion(activeTimerTask);
+          handleComplete(activeTimerTask);
           return 0;
         }
         return prev - 1;
@@ -43,7 +50,7 @@ export default function TasksPage() {
         clearInterval(checkClosedIntervalRef.current);
         setActiveTimerTask(null);
         setTimeLeft(0);
-        setAlertMsg('❌ టాస్క్ విఫలమైంది: స్పాన్సర్ పేజీని సమయం కంటే ముందే క్లోజ్ చేశారు!');
+        setAlertMsg('❌ Task Failed: Sponsor tab was closed prematurely.');
       }
     }, 500);
 
@@ -53,7 +60,6 @@ export default function TasksPage() {
     };
   }, [timeLeft, activeTimerTask]);
 
-  // Dedicated Video 60s Countdown Timer
   useEffect(() => {
     if (!videoModalTask || videoTimeLeft <= 0) return;
 
@@ -61,8 +67,8 @@ export default function TasksPage() {
       setVideoTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(vTimer);
-          handleTaskCompletion(videoModalTask);
-          setVideoModalTask(null);
+          setCanCloseVideo(true);
+          handleComplete(videoModalTask);
           return 0;
         }
         return prev - 1;
@@ -72,74 +78,70 @@ export default function TasksPage() {
     return () => clearInterval(vTimer);
   }, [videoTimeLeft, videoModalTask]);
 
-  const handleTaskCompletion = (task) => {
-    const updated = [...completedTasks, task.id];
-    setCompletedTasks(updated);
-    localStorage.setItem('completed_tasks', JSON.stringify(updated));
-
-    const savedUser = JSON.parse(localStorage.getItem('rewardUser') || '{"points": 265}');
-    savedUser.points = (savedUser.points || 265) + task.points;
-    localStorage.setItem('rewardUser', JSON.stringify(savedUser));
-
-    setAlertMsg(`🎉 అభినందనలు! "${task.title}" టాస్క్ పూర్తయింది. +${task.points} పాయింట్లు క్రెడిట్ అయ్యాయి.`);
+  const handleComplete = (task) => {
+    const updated = updateUserWallet(task.points, task.id);
+    if (updated) {
+      setCurrentUser({ ...updated });
+      setAlertMsg(`🎉 Success! +${task.points} pts added to your balance.`);
+    }
     setActiveTimerTask(null);
     sponsorWindowRef.current = null;
   };
 
   const tasksList = [
     {
-      id: 'task-yt-finora',
-      title: 'Watch & Earn: Finora Earning Guide',
+      id: 'task-finora-video-1',
+      title: 'Finora Official Earning Guide',
       category: 'Video',
-      badge: 'Finora Official',
-      points: 60,
-      durationSec: 60,
-      time: '60 secs',
-      desc: 'Finora Telugu గైడ్ వీడియోను 60 సెకన్ల పాటు చూసి కాయిన్స్ పొందండి.',
+      badge: 'Official Video',
+      points: 50,
+      durationSec: 62,
+      time: '62s locked',
+      desc: 'Watch Finora Telugu guide. Window lock enabled until timer completes.',
       youtubeId: 'ZoWP6tc5ols',
       prerollUrl: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30',
       type: 'video'
     },
     {
-      id: 'task-monetag-1',
-      title: 'Quick Sponsor Visit #1',
+      id: 'task-monetag-sponsor-1',
+      title: 'Monetag Partner Verification',
       category: 'Instant',
-      badge: 'Monetag Active',
-      points: 40,
-      durationSec: 20,
-      time: '20 secs',
-      desc: 'పార్ట్‌నర్ స్పాన్సర్ పేజీని 20 సెకన్ల పాటు ఎక్స్‌ప్లోర్ చేయండి.',
+      badge: 'Monetag Ad',
+      points: 35,
+      durationSec: 22,
+      time: '22 secs',
+      desc: 'Visit sponsor page without closing tab until timer ends.',
       url: 'https://uplcm.com/4/12198373',
       type: 'web'
     },
     {
-      id: 'task-adsterra-1',
-      title: 'Global Sponsor Discovery #2',
+      id: 'task-adsterra-sponsor-2',
+      title: 'Global Adsterra Discovery',
       category: 'Instant',
-      badge: 'Adsterra Active',
-      points: 70,
-      durationSec: 30,
-      time: '30 secs',
-      desc: 'గ్లోబల్ ఆఫర్లను 30 సెకన్లు పేజీ క్లోజ్ చేయకుండా పరిశీలించండి.',
+      badge: 'Adsterra Ad',
+      points: 40,
+      durationSec: 25,
+      time: '25 secs',
+      desc: 'Explore exclusive high-speed data offers on global network.',
       url: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30',
       type: 'web'
     }
   ];
 
-  const filtered = filter === 'ALL'
-    ? tasksList
-    : tasksList.filter(t => t.category.toLowerCase() === filter.toLowerCase() || t.badge.toLowerCase().includes(filter.toLowerCase()));
-
   const startTask = (task) => {
-    if (completedTasks.includes(task.id)) return;
+    if (!currentUser) return;
+
+    if ((currentUser.dailyTaskCount || 0) >= 12) {
+      setAlertMsg('⚠️ Daily quota reached! You can do a maximum of 12 tasks per day. Come back tomorrow.');
+      return;
+    }
 
     if (task.type === 'video') {
-      if (task.prerollUrl) {
-        window.open(task.prerollUrl, '_blank', 'noopener=false');
-      }
+      if (task.prerollUrl) window.open(task.prerollUrl, '_blank', 'noopener=false');
       setVideoModalTask(task);
       setVideoTimeLeft(task.durationSec);
-      setAlertMsg(`⏳ స్పాన్సర్ వెరిఫికేషన్ & Finora వీడియో మొదలైంది! 60 సెకన్లలో రివార్డ్ అన్‌లాక్ అవుతుంది.`);
+      setCanCloseVideo(false);
+      setAlertMsg('⏳ Mandatory verification started. Window locked for full watch duration.');
       return;
     }
 
@@ -147,60 +149,77 @@ export default function TasksPage() {
     sponsorWindowRef.current = win;
     setActiveTimerTask(task);
     setTimeLeft(task.durationSec);
-    setAlertMsg(`⏳ వెరిఫికేషన్ ప్రారంభమైంది... స్పాన్సర్ ట్యాబ్‌ను ${task.durationSec}s క్లోజ్ చేయవద్దు.`);
+    setAlertMsg(`⏳ Verification in progress... Keep sponsor tab open for ${task.durationSec}s.`);
   };
 
+  if (!currentUser) return null;
+
+  const earnedRupees = ((currentUser.points || 0) / 100).toFixed(2);
+  const rechargeProgress = Math.min(100, (((currentUser.points || 0) / 4900) * 100)).toFixed(1);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       <Head>
-        <title>Earn Points | RewardRush</title>
+        <title>Tasks & Earnings | Finora Rewards</title>
       </Head>
 
-      <div className="border-b border-[#1C2231] pb-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-[#F8FAFC]">Available Tasks</h1>
-          <span className="px-2.5 py-1 bg-[#34D399]/10 border border-[#34D399]/20 text-[#34D399] text-[11px] font-medium rounded-full">
-            ● Finora Partner Active
+      <div className="p-5 bg-gradient-to-r from-[#101522] via-[#151D30] to-[#101522] border border-[#252C3D] rounded-2xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[#818CF8]">Logged in as +91 {currentUser.phone}</span>
+            <button
+              onClick={() => {
+                logoutUser();
+                router.push('/auth');
+              }}
+              className="text-[#727C91] hover:text-[#FB7185] transition"
+              title="Logout"
+            >
+              <LogOut size={13} />
+            </button>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold text-[#F8FAFC] tracking-tight">₹{earnedRupees}</span>
+            <span className="text-xs text-[#34D399] font-medium font-mono">({currentUser.points} pts)</span>
+          </div>
+          <p className="text-[11px] text-[#A1A8B8]">100 Points = ₹1.00 INR | Real-time Verified Wallet</p>
+        </div>
+
+        <div className="sm:text-right space-y-1 sm:max-w-xs w-full">
+          <div className="flex justify-between sm:justify-end gap-2 text-xs font-medium">
+            <span className="text-[#A1A8B8]">₹49 Data Pack Goal</span>
+            <span className="text-[#818CF8] font-bold">{rechargeProgress}%</span>
+          </div>
+          <div className="w-full bg-[#0B0E17] h-2 rounded-full overflow-hidden border border-[#1C2231]">
+            <div
+              className="bg-gradient-to-r from-[#818CF8] to-[#34D399] h-full transition-all duration-500"
+              style={{ width: `${rechargeProgress}%` }}
+            />
+          </div>
+          <span className="text-[10px] text-[#727C91] block">
+            Tasks completed today: {currentUser.dailyTaskCount || 0} / 12
           </span>
         </div>
-        <p className="text-xs text-[#A1A8B8] mt-0.5">Finora వీడియోలు చూడండి & స్పాన్సర్స్ విజిట్ చేసి ₹49 రీఛార్జ్ పాయింట్లు సంపాదించండి</p>
       </div>
 
       {alertMsg && (
-        <div className={`p-3.5 border text-xs text-center rounded-xl font-medium ${
-          alertMsg.includes('❌') 
-            ? 'bg-[#FB7185]/10 border-[#FB7185]/30 text-[#FB7185]'
-            : alertMsg.includes('🎉')
-            ? 'bg-[#34D399]/10 border-[#34D399]/30 text-[#34D399]'
-            : 'bg-[#101522] border-[#252C3D] text-[#F8FAFC]'
-        }`}>
+        <div
+          className={`p-3.5 border text-xs text-center rounded-xl font-medium ${
+            alertMsg.includes('❌') || alertMsg.includes('⚠️')
+              ? 'bg-[#FB7185]/10 border-[#FB7185]/30 text-[#FB7185]'
+              : 'bg-[#34D399]/10 border-[#34D399]/30 text-[#34D399]'
+          }`}
+        >
           {alertMsg}
         </div>
       )}
 
-      {/* Web Task Timer */}
-      {timeLeft > 0 && activeTimerTask && (
-        <div className="p-4 bg-[#818CF8]/10 border border-[#818CF8]/30 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Clock className="text-[#818CF8] animate-spin" size={20} />
-            <div>
-              <h4 className="text-sm font-semibold text-[#F8FAFC]">{activeTimerTask.title}</h4>
-              <p className="text-xs text-[#FB7185] flex items-center gap-1 mt-0.5">
-                <AlertTriangle size={12} /> ట్యాబ్ క్లోజ్ చేస్తే టాస్క్ క్యాన్సిల్ అవుతుంది!
-              </p>
-            </div>
-          </div>
-          <span className="text-xl font-mono font-bold text-[#818CF8] tabular-nums">{timeLeft}s</span>
-        </div>
-      )}
-
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+      <div className="flex gap-2">
         {['ALL', 'Video', 'Instant'].map((tab) => (
           <button
             key={tab}
             onClick={() => setFilter(tab)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
               filter === tab
                 ? 'bg-[#818CF8] text-white'
                 : 'bg-[#101522] text-[#A1A8B8] border border-[#252C3D] hover:bg-[#151B2B]'
@@ -211,166 +230,117 @@ export default function TasksPage() {
         ))}
       </div>
 
-      {/* Task Cards */}
       <div className="space-y-3">
-        {filtered.map((task) => {
-          const isDone = completedTasks.includes(task.id);
-          const isCurrent = (activeTimerTask?.id === task.id) || (videoModalTask?.id === task.id);
+        {tasksList
+          .filter((t) => filter === 'ALL' || t.category === filter)
+          .map((task) => {
+            const isDone = currentUser.completedTasks?.includes(task.id);
+            const isRunning = activeTimerTask?.id === task.id || videoModalTask?.id === task.id;
 
-          return (
-            <div
-              key={task.id}
-              className={`p-4 bg-[#101522] border rounded-xl flex items-center justify-between gap-3 transition ${
-                isDone
-                  ? 'border-[#34D399]/30 opacity-60'
-                  : 'border-[#252C3D] hover:border-[#1C2335]'
-              }`}
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-[#F8FAFC]">{task.title}</span>
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#818CF8]/10 text-[#818CF8] border border-[#818CF8]/20">
-                    {task.badge}
-                  </span>
+            return (
+              <div
+                key={task.id}
+                className="p-4 bg-[#101522] border border-[#252C3D] rounded-xl flex items-center justify-between gap-3"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-[#F8FAFC]">{task.title}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#818CF8]/10 text-[#818CF8] border border-[#818CF8]/20">
+                      {task.badge}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#727C91]">{task.desc}</p>
+                  <span className="text-[11px] text-[#A1A8B8] block">⏱ Duration: {task.time}</span>
                 </div>
-                <p className="text-xs text-[#727C91]">{task.desc}</p>
-                <span className="text-[11px] text-[#A1A8B8] block">⏱ సమయం: {task.time}</span>
-              </div>
 
-              <div className="text-right flex flex-col items-end gap-2 shrink-0">
-                <span className="text-xs font-semibold text-[#F5B942] tabular-nums">+{task.points} pts</span>
-                {isDone ? (
-                  <span className="flex items-center gap-1 text-xs text-[#34D399] font-medium px-3 py-1.5 bg-[#34D399]/10 rounded-lg">
-                    <CheckCircle2 size={13} /> పూర్తి అయ్యింది
+                <div className="text-right flex flex-col items-end gap-2 shrink-0">
+                  <span className="text-xs font-bold text-[#F5B942]">
+                    +{task.points} pts (₹{(task.points / 100).toFixed(2)})
                   </span>
-                ) : (
-                  <button
-                    onClick={() => startTask(task)}
-                    disabled={isCurrent}
-                    className="flex items-center gap-1 px-4 py-1.5 bg-[#818CF8] hover:bg-[#6366F1] disabled:bg-[#151B2B] text-white text-xs font-medium rounded-lg transition"
-                  >
-                    {isCurrent ? 'ప్లే అవుతోంది...' : 'Start'}
-                    {task.type === 'video' ? <PlayCircle size={12} /> : <ExternalLink size={12} />}
-                  </button>
-                )}
+                  {isDone ? (
+                    <span className="flex items-center gap-1 text-xs text-[#34D399] font-medium px-3 py-1.5 bg-[#34D399]/10 rounded-lg">
+                      <CheckCircle2 size={13} /> Completed
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => startTask(task)}
+                      disabled={isRunning}
+                      className="flex items-center gap-1 px-4 py-1.5 bg-[#818CF8] hover:bg-[#6366F1] disabled:bg-[#151B2B] text-white text-xs font-semibold rounded-lg transition"
+                    >
+                      {isRunning ? 'Running...' : 'Start'}
+                      {task.type === 'video' ? <PlayCircle size={12} /> : <ExternalLink size={12} />}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
 
-      {/* Finora Dedicated Video Player Modal with High-Converting Visual Ads */}
       {videoModalTask && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-[#101522] border border-[#252C3D] w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl space-y-3.5 p-4 my-auto">
-            
-            {/* Header */}
             <div className="flex items-center justify-between border-b border-[#1C2231] pb-2.5">
               <div>
                 <h3 className="text-sm font-semibold text-[#F8FAFC]">{videoModalTask.title}</h3>
-                <span className="text-[11px] text-[#34D399] flex items-center gap-1">
-                  <ShieldCheck size={12} /> Finora Telugu Official
+                <span className="text-[11px] text-[#818CF8] flex items-center gap-1">
+                  <ShieldCheck size={12} /> Mandatory Full View Verified
                 </span>
               </div>
-              <button
-                onClick={() => {
-                  if (confirm('వీడియో ముందే ఆపేస్తే పాయింట్లు రావు. క్లోజ్ చేయాలా?')) {
+
+              {canCloseVideo ? (
+                <button
+                  onClick={() => {
                     setVideoModalTask(null);
-                    setVideoTimeLeft(0);
-                  }
-                }}
-                className="text-[#727C91] hover:text-white p-1 rounded-lg"
-              >
-                <X size={18} />
-              </button>
+                    setCanCloseVideo(false);
+                  }}
+                  className="px-3 py-1 bg-[#34D399] text-[#0B0E17] text-xs font-bold rounded-lg hover:bg-[#10B981] transition"
+                >
+                  Close & Claim
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FB7185]/10 border border-[#FB7185]/20 text-[#FB7185] text-[11px] font-semibold rounded-lg">
+                  <Lock size={12} /> Locked ({videoTimeLeft}s)
+                </div>
+              )}
             </div>
 
-            {/* TOP SPONSORED PROMO BANNER (Monetag Direct Ad) */}
             <a
               href="https://uplcm.com/4/12198373"
               target="_blank"
               rel="noopener noreferrer"
-              className="relative overflow-hidden block p-3 bg-gradient-to-r from-[#1E1B4B]/80 via-[#311042]/80 to-[#1E1B4B]/80 border border-[#818CF8]/40 hover:border-[#818CF8] rounded-xl transition group shadow-lg"
+              className="block p-3 bg-gradient-to-r from-[#1E1B4B]/80 to-[#101522] border border-[#818CF8]/30 rounded-xl text-center"
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-[#818CF8]/20 text-[#818CF8] rounded-lg">
-                    <Flame size={18} className="animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[9px] font-extrabold uppercase bg-[#818CF8] text-[#0A0D14] px-1.5 py-0.2 rounded font-mono">
-                        AD SPONSOR
-                      </span>
-                      <span className="text-xs font-bold text-white group-hover:text-[#A5B4FC] transition">
-                        ⚡ ₹49 Unlimited Data Recharge Coupon
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#94A3B8] mt-0.5">
-                      Claim exclusive high-speed 5G voucher codes instantly!
-                    </p>
-                  </div>
-                </div>
-                <span className="px-3 py-1.5 bg-[#818CF8] group-hover:bg-[#6366F1] text-white text-[11px] font-semibold rounded-lg shrink-0 flex items-center gap-1 transition">
-                  Claim <ExternalLink size={11} />
-                </span>
-              </div>
+              <span className="text-[9px] font-mono text-[#818CF8] font-bold uppercase">Sponsor Campaign</span>
+              <p className="text-xs font-medium text-white">⚡ Exclusive 5G Unlimited Recharge Coupon Available</p>
             </a>
 
-            {/* DEDICATED YOUTUBE VIDEO CONTAINER */}
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-[#1C2231] shadow-2xl">
+            <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-[#1C2231]">
               <iframe
                 className="w-full h-full"
                 src={`https://www.youtube-nocookie.com/embed/${videoModalTask.youtubeId}?autoplay=1&controls=1&rel=0&modestbranding=1`}
-                title="Finora Telugu Video"
+                title="Finora Stream"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
             </div>
 
-            {/* BOTTOM SPONSORED PROMO BANNER (Adsterra Direct Ad) */}
             <a
               href="https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30"
               target="_blank"
               rel="noopener noreferrer"
-              className="relative overflow-hidden block p-3 bg-gradient-to-r from-[#064E3B]/80 via-[#0F3C38]/80 to-[#064E3B]/80 border border-[#34D399]/40 hover:border-[#34D399] rounded-xl transition group shadow-lg"
+              className="block p-3 bg-gradient-to-r from-[#064E3B]/80 to-[#101522] border border-[#34D399]/30 rounded-xl text-center"
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-[#34D399]/20 text-[#34D399] rounded-lg">
-                    <Gift size={18} className="animate-bounce" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[9px] font-extrabold uppercase bg-[#34D399] text-[#0A0D14] px-1.5 py-0.2 rounded font-mono">
-                        SPECIAL OFFER
-                      </span>
-                      <span className="text-xs font-bold text-white group-hover:text-[#6EE7B7] transition">
-                        🎁 Free Instant Scratch & Win Bonus
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#94A3B8] mt-0.5">
-                      Tap to check daily unlocked rewards & partner gifts.
-                    </p>
-                  </div>
-                </div>
-                <span className="px-3 py-1.5 bg-[#34D399] group-hover:bg-[#10B981] text-[#0A0D14] text-[11px] font-bold rounded-lg shrink-0 flex items-center gap-1 transition">
-                  Explore <ExternalLink size={11} />
-                </span>
-              </div>
+              <span className="text-[9px] font-mono text-[#34D399] font-bold uppercase">Partner Offer</span>
+              <p className="text-xs font-medium text-white">🎁 Instant Data Voucher Unlocked — Tap To Activate</p>
             </a>
 
-            {/* LIVE COUNTDOWN FOOTER */}
-            <div className="p-3 bg-[#151B2B] rounded-xl flex items-center justify-between border border-[#1C2231]">
-              <div className="flex items-center gap-2">
-                <Clock className="text-[#818CF8] animate-spin" size={16} />
-                <span className="text-xs text-[#F8FAFC]">రివార్డ్ అన్‌లాక్ అవ్వడానికి సమయం:</span>
-              </div>
-              <span className="text-base font-mono font-bold text-[#34D399] tabular-nums">
-                {videoTimeLeft}s
+            <div className="p-3 bg-[#151B2B] rounded-xl flex items-center justify-between">
+              <span className="text-xs text-[#A1A8B8]">
+                {canCloseVideo ? '✅ Full watch duration completed!' : '🔒 Video cannot be closed early. Reward unlocks at 0s.'}
               </span>
+              <span className="text-sm font-mono font-bold text-[#34D399]">{videoTimeLeft}s</span>
             </div>
-
           </div>
         </div>
       )}
