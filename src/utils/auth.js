@@ -16,6 +16,7 @@ export const getLoggedInUser = () => {
   return user ? JSON.parse(user) : null;
 };
 
+// Backward compatibility export to prevent any build breakage
 export const getAllUsers = () => {
   if (typeof window === 'undefined') return {};
   const user = getLoggedInUser();

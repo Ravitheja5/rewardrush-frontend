@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { getLoggedInUser, syncWallet } from '../utils/auth';
+import { getLoggedInUser, syncWallet, getAllUsers } from '../utils/auth';
 import { apiRequest } from '../utils/api';
 import { Zap, ArrowRight, Loader2 } from 'lucide-react';
 
