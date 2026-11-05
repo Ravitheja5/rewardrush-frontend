@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-import { ExternalLink, CheckCircle2, Clock, PlayCircle, AlertTriangle, X, ShieldCheck } from 'lucide-react';
+import { ExternalLink, CheckCircle2, Clock, PlayCircle, AlertTriangle, X, ShieldCheck, Flame, Gift, Sparkles } from 'lucide-react';
 
 export default function TasksPage() {
   const [filter, setFilter] = useState('ALL');
@@ -96,8 +96,8 @@ export default function TasksPage() {
       durationSec: 60,
       time: '60 secs',
       desc: 'Finora Telugu గైడ్ వీడియోను 60 సెకన్ల పాటు చూసి కాయిన్స్ పొందండి.',
-      youtubeId: 'ZoWP6tc5ols', // Finora Telugu video
-      prerollUrl: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30', // Adsterra SmartLink
+      youtubeId: 'ZoWP6tc5ols',
+      prerollUrl: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30',
       type: 'video'
     },
     {
@@ -259,16 +259,17 @@ export default function TasksPage() {
         })}
       </div>
 
-      {/* Finora Dedicated Video Player Modal */}
+      {/* Finora Dedicated Video Player Modal with High-Converting Visual Ads */}
       {videoModalTask && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#101522] border border-[#252C3D] w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl space-y-3 p-4">
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-[#101522] border border-[#252C3D] w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl space-y-3.5 p-4 my-auto">
             
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-[#1C2231] pb-2.5">
               <div>
                 <h3 className="text-sm font-semibold text-[#F8FAFC]">{videoModalTask.title}</h3>
                 <span className="text-[11px] text-[#34D399] flex items-center gap-1">
-                  <ShieldCheck size={12} /> Finora Telugu ఛానెల్ పార్ట్‌నర్
+                  <ShieldCheck size={12} /> Finora Telugu Official
                 </span>
               </div>
               <button
@@ -284,19 +285,40 @@ export default function TasksPage() {
               </button>
             </div>
 
-            {/* TOP SPONSOR BANNER */}
+            {/* TOP SPONSORED PROMO BANNER (Monetag Direct Ad) */}
             <a
               href="https://uplcm.com/4/12198373"
               target="_blank"
               rel="noopener noreferrer"
-              className="block p-2.5 bg-[#151B2B] border border-[#818CF8]/30 rounded-xl hover:border-[#818CF8] transition text-center"
+              className="relative overflow-hidden block p-3 bg-gradient-to-r from-[#1E1B4B]/80 via-[#311042]/80 to-[#1E1B4B]/80 border border-[#818CF8]/40 hover:border-[#818CF8] rounded-xl transition group shadow-lg"
             >
-              <span className="text-[10px] text-[#818CF8] font-bold uppercase tracking-wider block">Sponsored Campaign</span>
-              <p className="text-xs text-[#F8FAFC] font-medium">🔥 Exclusive Jio/Airtel Data Booster Offers — Tap Here</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-[#818CF8]/20 text-[#818CF8] rounded-lg">
+                    <Flame size={18} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] font-extrabold uppercase bg-[#818CF8] text-[#0A0D14] px-1.5 py-0.2 rounded font-mono">
+                        AD SPONSOR
+                      </span>
+                      <span className="text-xs font-bold text-white group-hover:text-[#A5B4FC] transition">
+                        ⚡ ₹49 Unlimited Data Recharge Coupon
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#94A3B8] mt-0.5">
+                      Claim exclusive high-speed 5G voucher codes instantly!
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3 py-1.5 bg-[#818CF8] group-hover:bg-[#6366F1] text-white text-[11px] font-semibold rounded-lg shrink-0 flex items-center gap-1 transition">
+                  Claim <ExternalLink size={11} />
+                </span>
+              </div>
             </a>
 
             {/* DEDICATED YOUTUBE VIDEO CONTAINER */}
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-[#1C2231]">
+            <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-[#1C2231] shadow-2xl">
               <iframe
                 className="w-full h-full"
                 src={`https://www.youtube-nocookie.com/embed/${videoModalTask.youtubeId}?autoplay=1&controls=1&rel=0&modestbranding=1`}
@@ -306,19 +328,40 @@ export default function TasksPage() {
               />
             </div>
 
-            {/* BOTTOM SPONSOR BANNER */}
+            {/* BOTTOM SPONSORED PROMO BANNER (Adsterra Direct Ad) */}
             <a
               href="https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30"
               target="_blank"
               rel="noopener noreferrer"
-              className="block p-2.5 bg-[#151B2B] border border-[#34D399]/30 rounded-xl hover:border-[#34D399] transition text-center"
+              className="relative overflow-hidden block p-3 bg-gradient-to-r from-[#064E3B]/80 via-[#0F3C38]/80 to-[#064E3B]/80 border border-[#34D399]/40 hover:border-[#34D399] rounded-xl transition group shadow-lg"
             >
-              <span className="text-[10px] text-[#34D399] font-bold uppercase tracking-wider block">Global Partner Offer</span>
-              <p className="text-xs text-[#F8FAFC] font-medium">⚡ High-Speed 5G Unlimited Recharge Bonus — Check Now</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-[#34D399]/20 text-[#34D399] rounded-lg">
+                    <Gift size={18} className="animate-bounce" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] font-extrabold uppercase bg-[#34D399] text-[#0A0D14] px-1.5 py-0.2 rounded font-mono">
+                        SPECIAL OFFER
+                      </span>
+                      <span className="text-xs font-bold text-white group-hover:text-[#6EE7B7] transition">
+                        🎁 Free Instant Scratch & Win Bonus
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#94A3B8] mt-0.5">
+                      Tap to check daily unlocked rewards & partner gifts.
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3 py-1.5 bg-[#34D399] group-hover:bg-[#10B981] text-[#0A0D14] text-[11px] font-bold rounded-lg shrink-0 flex items-center gap-1 transition">
+                  Explore <ExternalLink size={11} />
+                </span>
+              </div>
             </a>
 
             {/* LIVE COUNTDOWN FOOTER */}
-            <div className="p-3 bg-[#151B2B] rounded-xl flex items-center justify-between">
+            <div className="p-3 bg-[#151B2B] rounded-xl flex items-center justify-between border border-[#1C2231]">
               <div className="flex items-center gap-2">
                 <Clock className="text-[#818CF8] animate-spin" size={16} />
                 <span className="text-xs text-[#F8FAFC]">రివార్డ్ అన్‌లాక్ అవ్వడానికి సమయం:</span>
