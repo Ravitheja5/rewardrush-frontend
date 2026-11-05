@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://rewards-app-backend-lq2v.onrender.com';
 
 export const apiRequest = async (endpoint, method = 'GET', body = null) => {
   const options = {
