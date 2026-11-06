@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getAuthSession, fetchLiveUserFromDB } from '../utils/auth';
-import { Zap, ShieldCheck, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Zap, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function RewardsPage() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function RewardsPage() {
       return;
     }
     setUser(liveUser);
-    setMobileNumber(liveUser.phone || '');
+    setMobileNumber(String(liveUser.phone || '').replace(/\D/g, '').slice(-10));
     setLoading(false);
   };
 
@@ -36,17 +36,12 @@ export default function RewardsPage() {
 
   const handleRedeem = async () => {
     setStatusMsg(null);
-    let sanitized = String(mobileNumber || '').trim().replace(/\D/g, '');
-
-    // Handle numbers entered with country code (+91 or 91)
-    if (sanitized.length === 12 && sanitized.startsWith('91')) {
-      sanitized = sanitized.slice(2);
-    }
+    const sanitized = String(mobileNumber || '').trim().replace(/\D/g, '').slice(-10);
 
     if (sanitized.length !== 10 || !/^[6-9]\d{9}$/.test(sanitized)) {
       setStatusMsg({
         type: 'error',
-        text: 'Invalid phone number. Please enter a valid 10-digit Indian mobile number.'
+        text: 'Please enter a valid 10-digit Indian mobile number.'
       });
       return;
     }
@@ -54,7 +49,7 @@ export default function RewardsPage() {
     if (!user || user.points < 4900) {
       setStatusMsg({
         type: 'error',
-        text: 'Insufficient points balance. A minimum of 4,900 points is required for a ₹49 recharge.'
+        text: 'Insufficient points balance. You need at least 4,900 points.'
       });
       return;
     }
@@ -67,7 +62,7 @@ export default function RewardsPage() {
         body: JSON.stringify({
           phone: user.phone,
           targetPhone: sanitized,
-          operator,
+          operator: operator,
           pointsCost: 4900,
           rewardType: 'DATA_PACK_49'
         })
@@ -75,13 +70,13 @@ export default function RewardsPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Unable to process redemption request.');
+        throw new Error(data.message || 'Redemption request failed.');
       }
 
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: `Recharge request confirmed! Reference ID: #${data.redemption?.id || data.orderId || 'REQ-LIVE'}. Your ₹49 data pack is queued for delivery.`
+        text: `Recharge order placed successfully! Order ID: #${data.redemption?.id || data.orderId || 'REQ-LIVE'}. Status: PENDING Admin Approval.`
       });
     } catch (err) {
       setStatusMsg({ type: 'error', text: err.message });
@@ -94,7 +89,7 @@ export default function RewardsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-white">
         <RefreshCw className="animate-spin text-[#6366F1] mb-2" size={32} />
-        <p className="text-xs text-[#94A3B8]">Connecting to database...</p>
+        <p className="text-xs text-[#94A3B8]">Loading live balance from database...</p>
       </div>
     );
   }
@@ -110,7 +105,7 @@ export default function RewardsPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-black">Mobile Recharge Store</h1>
         <p className="text-xs text-[#94A3B8]">
-          Available Balance: <strong className="text-emerald-400">{user.points} pts</strong> (≈ ₹{(user.points / 100).toFixed(2)})
+          Available Live Balance: <strong className="text-emerald-400">{user.points} pts</strong> (≈ ₹{(user.points / 100).toFixed(2)})
         </p>
       </div>
 
@@ -133,7 +128,7 @@ export default function RewardsPage() {
             </div>
             <div>
               <h3 className="text-sm font-bold">₹49 - 1-Day Unlimited Data Pack</h3>
-              <p className="text-[11px] text-[#94A3B8]">High-speed 4G/5G data booster for Jio, Airtel, and Vi</p>
+              <p className="text-[11px] text-[#94A3B8]">High speed 4G/5G data pack for Jio, Airtel, and Vi</p>
             </div>
           </div>
           <span className="px-3 py-1 bg-[#6366F1]/20 border border-[#6366F1]/30 text-[#818CF8] text-xs font-black rounded-lg">
@@ -187,7 +182,7 @@ export default function RewardsPage() {
                 : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
             }`}
           >
-            {redeeming ? 'Processing Transaction in Database...' : 'Redeem Now (4,900 Pts)'}
+            {redeeming ? 'Processing in Database...' : 'Redeem Now (4,900 Pts)'}
           </button>
         </div>
       </div>
