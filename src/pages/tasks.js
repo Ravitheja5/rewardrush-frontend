@@ -1,3 +1,4 @@
+import CpxSurveysCard from "../components/CpxSurveysCard";
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -142,6 +143,8 @@ export default function TasksPage() {
       )}
 
       {/* Clean Tabs */}
+      <CpxSurveysCard user={user} />
+
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={() => setActiveTab('daily')}
