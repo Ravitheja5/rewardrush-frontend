@@ -46,7 +46,7 @@ export default function RewardsPage() {
       return;
     }
 
-    if (!user || user.points < 4900) {
+    if (!user || Number(user.points) < 4900) {
       setStatusMsg({
         type: 'error',
         text: 'Insufficient points balance. You need at least 4,900 points.'
@@ -76,7 +76,7 @@ export default function RewardsPage() {
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: 'Recharge order placed successfully! Order ID: #' + (data.redemption?.id || data.orderId || 'REQ-LIVE') + '. Status: PENDING Admin Approval.'
+        text: `Recharge order placed successfully! Order ID: #${data.redemption?.id || data.orderId || 'REQ-LIVE'}. Status: PENDING Admin Approval.`
       });
     } catch (err) {
       setStatusMsg({ type: 'error', text: err.message });
@@ -175,9 +175,9 @@ export default function RewardsPage() {
 
           <button
             onClick={handleRedeem}
-            disabled={redeeming || user.points < 4900}
+            disabled={redeeming || Number(user.points) < 4900}
             className={`w-full py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
-              user.points < 4900
+              Number(user.points) < 4900
                 ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
                 : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
             }`}

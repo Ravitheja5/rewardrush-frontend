@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getAuthSession, fetchLiveUserFromDB } from '../utils/auth';
-import { ExternalLink, CheckCircle, Clock, Zap, Flame, ShieldCheck } from 'lucide-react';
+import { ExternalLink, CheckCircle, Clock, Zap, Flame } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
@@ -17,13 +17,11 @@ export default function TasksPage() {
   const adsterraUrl = 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a';
   const monetagUrl = 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a';
 
-  // 130 Daily Ads: 65 Monetag + 65 Adsterra @ 38 points each = 4,940 Points (₹49 pack guarantee)
   const dailyAds = Array.from({ length: 130 }, (_, i) => {
     const isMonetag = i % 2 === 0;
     return {
       id: `ad_${isMonetag ? 'monetag' : 'adsterra'}_${i + 1}`,
       title: `${isMonetag ? 'Monetag' : 'Adsterra'} Video & Web Task #${i + 1}`,
-      provider: isMonetag ? 'Monetag Network' : 'Adsterra Network',
       points: 38,
       seconds: 60,
       url: isMonetag ? monetagUrl : adsterraUrl,
@@ -31,13 +29,11 @@ export default function TasksPage() {
     };
   });
 
-  // ONLY 2 vCommission Campaigns: Fibe.in and Xcelview.com CPR
   const vCommissionCampaigns = [
     {
       id: 'vcomm_fibe_in',
       title: 'Fibe.in - Instant Personal Loan & Credit',
-      provider: 'vCommission Financial',
-      desc: 'Complete quick digital loan eligibility registration on Fibe.in.',
+      desc: 'Complete digital loan eligibility registration on Fibe.in platform.',
       points: 2500,
       rewardValue: '₹25.00 Value',
       url: 'https://vcommission.com/aff_c?offer_id=fibe_in',
@@ -45,9 +41,8 @@ export default function TasksPage() {
     },
     {
       id: 'vcomm_xcelview_cpr',
-      title: 'Xcelview.com - Digital CPR Campaign',
-      provider: 'vCommission CPR',
-      desc: 'Verify registration and explore the platform for 60 seconds.',
+      title: 'Xcelview.com - CPR Digital Campaign',
+      desc: 'Verify registration and explore product dashboard for 60 seconds.',
       points: 2000,
       rewardValue: '₹20.00 Value',
       url: 'https://vcommission.com/aff_c?offer_id=xcelview_cpr',
@@ -69,7 +64,6 @@ export default function TasksPage() {
     loadData();
   }, [router]);
 
-  // Anti-Cheat: 60-Second Window Monitor
   useEffect(() => {
     let timer;
     if (activeTask && secondsLeft > 0) {
@@ -77,7 +71,7 @@ export default function TasksPage() {
         if (adWindowRef.current && adWindowRef.current.closed) {
           setStatusMsg({
             type: 'error',
-            text: 'Offer tab was closed before completion. 60 seconds view time is mandatory. Task cancelled.'
+            text: 'Offer tab was closed early! Full 60 seconds view is required. Task cancelled.'
           });
           setActiveTask(null);
           setSecondsLeft(0);
@@ -121,7 +115,7 @@ export default function TasksPage() {
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: `+${activeTask.points} Points credited directly to your database balance!`
+        text: `+${activeTask.points} Points credited directly to PostgreSQL database!`
       });
       setActiveTask(null);
 
@@ -173,7 +167,6 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* DUAL CHANNEL NAVIGATION */}
       <div className="grid grid-cols-2 gap-2 p-1 bg-[#101522] border border-[#252C3D] rounded-2xl">
         <button
           onClick={() => setActiveTab('daily_ads')}
@@ -197,7 +190,6 @@ export default function TasksPage() {
         </button>
       </div>
 
-      {/* ACTIVE 60s RUNNING TASK BANNER */}
       {activeTask && (
         <div className="p-5 bg-gradient-to-r from-[#1E1B4B] to-[#101522] border-2 border-[#6366F1] rounded-2xl space-y-3 shadow-2xl">
           <div className="flex items-center justify-between">
@@ -229,7 +221,6 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* TASK LIST DISPLAY */}
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs text-[#94A3B8]">
           <span className="uppercase font-bold tracking-wider">
@@ -252,7 +243,7 @@ export default function TasksPage() {
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-[#94A3B8]">{t.desc || `${t.provider} • 60-second view time required`}</p>
+              <p className="text-[11px] text-[#94A3B8]">{t.desc || '60-second view time required'}</p>
               <div className="flex items-center gap-2 pt-0.5">
                 <span className="text-xs font-bold text-emerald-400">+{t.points} Points</span>
                 {t.rewardValue && <span className="text-[10px] text-amber-400 font-semibold">({t.rewardValue})</span>}
