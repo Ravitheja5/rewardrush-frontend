@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getAuthSession, fetchLiveUserFromDB } from '../utils/auth';
-import { ExternalLink, CheckCircle, Clock, Zap, Flame, ShieldCheck } from 'lucide-react';
+import { ExternalLink, CheckCircle, Clock, Zap, Flame } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
@@ -16,66 +16,66 @@ export default function TasksPage() {
 
   const smartlinkUrl = 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a';
 
-  // STREAM 1: 130 Daily Adsterra Tasks @ 38 points each = 4,940 Points (Full ₹49 Data Pack)
+  // 130 Tasks x 38 Points = 4,940 Points (Full ₹49 Data Pack Opportunity)
   const dailyAdTasks = Array.from({ length: 130 }, (_, i) => ({
     id: `ad_task_${i + 1}`,
-    title: `Sponsor Ad Task #${i + 1}`,
+    title: `Sponsored Ad Task #${i + 1}`,
     points: 38,
     seconds: 60,
     url: smartlinkUrl,
-    badge: 'Daily 130 Pool'
+    badge: `Task ${i + 1}/130`
   }));
 
-  // STREAM 2: vCommission Financial & Affiliate Campaigns (High-value leads)
+  // High Commission vCommission Campaigns
   const vCommissionOffers = [
     {
       id: 'vcomm_kotak811',
       title: 'Kotak 811 Zero Balance Savings Account',
-      category: 'Banking / vCommission',
+      category: 'Banking',
       points: 2500,
       rewardValue: '₹25.00 Value',
-      desc: 'Open a verified zero-balance digital bank account online.',
-      url: 'https://vcommission.com/aff_c?offer_id=kotak811',
+      desc: 'Open a verified zero-balance digital savings account online.',
+      url: smartlinkUrl,
       seconds: 60
     },
     {
       id: 'vcomm_angelone',
       title: 'Angel One Free Demat Account Opening',
-      category: 'FinTech / vCommission',
+      category: 'FinTech',
       points: 2000,
       rewardValue: '₹20.00 Value',
-      desc: 'Sign up with Aadhaar KYC for a lifetime free Demat account.',
-      url: 'https://vcommission.com/aff_c?offer_id=angelone',
+      desc: 'Complete digital Aadhaar KYC to activate your free demat account.',
+      url: smartlinkUrl,
       seconds: 60
     },
     {
       id: 'vcomm_aubank_cc',
       title: 'AU Small Finance Bank Lifetime Free Credit Card',
-      category: 'Credit Cards / vCommission',
+      category: 'Credit Cards',
       points: 3500,
       rewardValue: '₹35.00 Value',
-      desc: 'Check pre-approved eligibility for lifetime free credit card.',
-      url: 'https://vcommission.com/aff_c?offer_id=aubank_cc',
+      desc: 'Check instant eligibility for a lifetime free reward credit card.',
+      url: smartlinkUrl,
       seconds: 60
     },
     {
       id: 'vcomm_indusind',
       title: 'IndusInd Bank Instant Digital Account',
-      category: 'Banking / vCommission',
+      category: 'Banking',
       points: 1800,
       rewardValue: '₹18.00 Value',
-      desc: 'Instant account opening with zero balance requirement.',
-      url: 'https://vcommission.com/aff_c?offer_id=indusind',
+      desc: 'Instant zero-balance savings account with complimentary virtual debit card.',
+      url: smartlinkUrl,
       seconds: 60
     },
     {
       id: 'vcomm_bajaj_finserv',
-      title: 'Bajaj Finserv Insta EMI Card Check',
-      category: 'Finance / vCommission',
+      title: 'Bajaj Finserv Insta EMI Card Eligibility Check',
+      category: 'Credit & Loans',
       points: 1500,
       rewardValue: '₹15.00 Value',
-      desc: 'Apply online and activate up to ₹2,00,000 instant credit limit.',
-      url: 'https://vcommission.com/aff_c?offer_id=bajaj_emi',
+      desc: 'Apply online and activate an instant credit limit of up to ₹2,00,000.',
+      url: smartlinkUrl,
       seconds: 60
     }
   ];
@@ -94,7 +94,7 @@ export default function TasksPage() {
     loadData();
   }, [router]);
 
-  // Anti-Cheat: 60s Stay & Premature Tab Close Detection
+  // Anti-Cheat: 60s View & Tab Close Detection
   useEffect(() => {
     let timer;
     if (activeTask && secondsLeft > 0) {
@@ -102,7 +102,7 @@ export default function TasksPage() {
         if (adWindowRef.current && adWindowRef.current.closed) {
           setStatusMsg({
             type: 'error',
-            text: 'Offer tab was closed prematurely! 60 seconds continuous viewing is required. Task cancelled.'
+            text: 'Offer tab was closed early! You must view the page for full 60 seconds. Task cancelled.'
           });
           setActiveTask(null);
           setSecondsLeft(0);
@@ -178,7 +178,7 @@ export default function TasksPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white">Earn Rewards</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-white">Daily Tasks & Offers</h1>
           <p className="text-xs text-[#94A3B8]">Complete tasks to claim the ₹49 Unlimited Data Pack (4,900 pts)</p>
         </div>
         <div className="px-3 py-1.5 bg-[#1E1B4B] border border-[#6366F1]/30 rounded-xl text-right">
@@ -257,7 +257,7 @@ export default function TasksPage() {
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs text-[#94A3B8]">
           <span className="uppercase font-bold tracking-wider">
-            {activeTab === 'daily_ads' ? 'Daily Adsterra Tasks Pool (130)' : 'High-Ticket vCommission Offers'}
+            {activeTab === 'daily_ads' ? 'Daily Adsterra Tasks Pool (130 Max)' : 'High-Ticket vCommission Offers'}
           </span>
           <span>{tasksToDisplay.length} Available</span>
         </div>

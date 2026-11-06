@@ -36,12 +36,12 @@ export default function RewardsPage() {
 
   const handleRedeem = async () => {
     setStatusMsg(null);
-    const cleanNumber = mobileNumber.trim().replace(/\D/g, '');
+    const sanitized = (mobileNumber || '').toString().trim().replace(/\D/g, '');
 
-    if (!/^[6-9]\d{9}$/.test(cleanNumber)) {
+    if (sanitized.length !== 10 || !/^[6-9]\d{9}$/.test(sanitized)) {
       setStatusMsg({
         type: 'error',
-        text: 'Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.'
+        text: 'Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9).'
       });
       return;
     }
@@ -49,7 +49,7 @@ export default function RewardsPage() {
     if (!user || user.points < 4900) {
       setStatusMsg({
         type: 'error',
-        text: 'Insufficient points! You need at least 4,900 points to redeem this recharge pack.'
+        text: 'Insufficient balance! You need at least 4,900 points to redeem this recharge.'
       });
       return;
     }
@@ -61,8 +61,8 @@ export default function RewardsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: user.phone,
-          targetPhone: cleanNumber,
-          operator,
+          targetPhone: sanitized,
+          operator: operator,
           pointsCost: 4900,
           rewardType: 'DATA_PACK_49'
         })
@@ -70,13 +70,13 @@ export default function RewardsPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Redemption request failed.');
+        throw new Error(data.message || 'Redemption failed. Please try again.');
       }
 
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: `Recharge request submitted successfully! Order ID: ${data.redemption?.id || data.orderId}. Status: PENDING Admin Approval.`
+        text: `Recharge Order Placed! Request ID: #${data.redemption?.id || data.orderId || 'RR-LIVE'}. Your ₹49 recharge will be processed shortly.`
       });
     } catch (err) {
       setStatusMsg({ type: 'error', text: err.message });
