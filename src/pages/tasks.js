@@ -2,34 +2,57 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getAuthSession, fetchLiveUserFromDB } from '../utils/auth';
-import { ExternalLink, CheckCircle, Clock, Zap } from 'lucide-react';
+import { ExternalLink, CheckCircle, Clock, ShieldAlert } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
-  const [user, setUser] = useState({ name: 'Member', phone: '6300442917', points: 10000 });
+  const [user, setUser] = useState(null);
   const [activeTask, setActiveTask] = useState(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [claiming, setClaiming] = useState(false);
   const [statusMsg, setStatusMsg] = useState(null);
   const adWindowRef = useRef(null);
 
-  const safeOffers = [
-    { id: 'task_sponsor_1', title: 'Sponsored High-Value Brand Offer', points: 100, url: 'https://www.google.com/search?q=prepaid+data+recharge+deals' },
-    { id: 'task_sponsor_2', title: 'FinTech Cashback & Rewards Portal', points: 75, url: 'https://www.google.com/search?q=best+fintech+cashback+offers' },
-    { id: 'task_sponsor_3', title: 'Daily Featured Discovery Promo', points: 50, url: 'https://www.google.com/search?q=instant+discount+recharge+deals' }
+  // FIXED ADSTERRA SMARTLINKS (Rule-based)
+  const availableTasks = [
+    {
+      id: 'adsterra_task_1',
+      title: 'Adsterra Smartlink Offer 1',
+      points: 100,
+      staySeconds: 60,
+      url: 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a'
+    },
+    {
+      id: 'adsterra_task_2',
+      title: 'Adsterra Smartlink Offer 2',
+      points: 75,
+      staySeconds: 60,
+      url: 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a'
+    },
+    {
+      id: 'adsterra_task_3',
+      title: 'Adsterra Smartlink Offer 3',
+      points: 50,
+      staySeconds: 60,
+      url: 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a'
+    }
   ];
 
-  useEffect(() => {
+  const loadData = async () => {
     const session = getAuthSession();
     if (!session || !session.phone) {
       router.push('/auth');
       return;
     }
-    fetchLiveUserFromDB().then((u) => {
-      if (u) setUser(u);
-    });
+    const liveUser = await fetchLiveUserFromDB();
+    if (liveUser) setUser(liveUser);
+  };
+
+  useEffect(() => {
+    loadData();
   }, [router]);
 
+  // Anti-Cheat: 60s Stay & Tab Close Detection
   useEffect(() => {
     let timer;
     if (activeTask && secondsLeft > 0) {
@@ -37,7 +60,7 @@ export default function TasksPage() {
         if (adWindowRef.current && adWindowRef.current.closed) {
           setStatusMsg({
             type: 'error',
-            text: 'Offer tab ventane close chesaru! Poorthiga 60 seconds aagalsinde.'
+            text: 'Offer window close chesaru! Poorthiga 60 seconds stay mandatory. Task reset aindi.'
           });
           setActiveTask(null);
           setSecondsLeft(0);
@@ -49,21 +72,22 @@ export default function TasksPage() {
     return () => clearInterval(timer);
   }, [activeTask, secondsLeft]);
 
-  const handleStart = (task) => {
+  const handleStartTask = (task) => {
     setStatusMsg(null);
     const win = window.open(task.url, '_blank', 'noopener=false');
     adWindowRef.current = win;
     setActiveTask(task);
-    setSecondsLeft(60);
+    setSecondsLeft(task.staySeconds);
   };
 
-  const handleClaim = async () => {
+  const handleClaimPoints = async () => {
     if (secondsLeft > 0 || !activeTask || !user) return;
     setClaiming(true);
     setStatusMsg(null);
 
     try {
-      const res = await fetch('https://rewards-app-backend-lq2v.onrender.com/api/tasks/claim', {
+      const backendUrl = 'https://rewards-app-backend-lq2v.onrender.com';
+      const res = await fetch(`${backendUrl}/api/tasks/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -75,15 +99,16 @@ export default function TasksPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Claim failed');
+        throw new Error(data.message || 'Task claim cheyadam fail aindi');
       }
 
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: `🎉 +${activeTask.points} Points credited directly to PostgreSQL!`
+        text: `🎉 +${activeTask.points} Points direct ga PostgreSQL database balance ki credit ayyayi!`
       });
       setActiveTask(null);
+
       if (adWindowRef.current && !adWindowRef.current.closed) {
         adWindowRef.current.close();
       }
@@ -94,19 +119,27 @@ export default function TasksPage() {
     }
   };
 
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-white">
+        <p className="text-xs text-[#94A3B8]">Database nundi live data fetch chesthunnam...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-28 px-4 pt-4">
       <Head>
-        <title>Daily Tasks | RewardRush</title>
+        <title>Adsterra Tasks | RewardRush</title>
       </Head>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white">Daily Tasks Hub</h1>
-          <p className="text-xs text-[#94A3B8]">Complete 60s verified partner offers to earn points</p>
+          <h1 className="text-xl sm:text-2xl font-black text-white">Daily Tasks & Ads</h1>
+          <p className="text-xs text-[#94A3B8]">Mee Adsterra Smartlinks tho 60 seconds tasks</p>
         </div>
         <div className="px-3 py-1.5 bg-[#1E1B4B] border border-[#6366F1]/30 rounded-xl text-right">
-          <span className="text-[10px] text-[#94A3B8] block">Live Balance</span>
+          <span className="text-[10px] text-[#94A3B8] block">Live DB Balance</span>
           <span className="text-sm font-black text-emerald-400">{user.points} pts</span>
         </div>
       </div>
@@ -119,6 +152,7 @@ export default function TasksPage() {
         </div>
       )}
 
+      {/* ACTIVE TASK WITH 60s COUNTDOWN */}
       {activeTask && (
         <div className="p-5 bg-[#1E1B4B] border-2 border-[#6366F1] rounded-2xl space-y-3 shadow-xl">
           <div className="flex items-center justify-between">
@@ -130,14 +164,14 @@ export default function TasksPage() {
 
           <p className="text-xs text-[#94A3B8]">
             {secondsLeft > 0 ? (
-              <span>Offer page open lo unchandi: <strong className="text-amber-400 text-sm">{secondsLeft}s</strong></span>
+              <span>Ad page open lo unchandi: <strong className="text-amber-400 text-sm">{secondsLeft}s</strong></span>
             ) : (
-              <span className="text-emerald-400 font-bold">✅ 60 seconds finished! Claim your points below.</span>
+              <span className="text-emerald-400 font-bold">✅ 60 seconds finished! Claim points.</span>
             )}
           </p>
 
           <button
-            onClick={handleClaim}
+            onClick={handleClaimPoints}
             disabled={secondsLeft > 0 || claiming}
             className={`w-full py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition ${
               secondsLeft > 0
@@ -145,21 +179,21 @@ export default function TasksPage() {
                 : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg'
             }`}
           >
-            <CheckCircle size={15} /> {claiming ? 'Updating DB...' : `Claim ${activeTask.points} Points`}
+            <CheckCircle size={15} /> {claiming ? 'Saving in PostgreSQL...' : `Claim ${activeTask.points} Points`}
           </button>
         </div>
       )}
 
       <div className="space-y-3">
-        {safeOffers.map((t) => (
+        {availableTasks.map((t) => (
           <div key={t.id} className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-2xl flex items-center justify-between transition">
             <div>
               <h3 className="text-sm font-bold text-white">{t.title}</h3>
-              <p className="text-xs text-[#94A3B8]">60s stay required • Anti-cheat verified</p>
+              <p className="text-xs text-[#94A3B8]">Anti-Cheat Active • 60 Sec Stay Required</p>
               <span className="text-xs font-bold text-emerald-400">+{t.points} Points</span>
             </div>
             <button
-              onClick={() => handleStart(t)}
+              onClick={() => handleStartTask(t)}
               disabled={activeTask !== null}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
                 activeTask !== null ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-[#6366F1] text-white hover:bg-[#4F46E5]'
