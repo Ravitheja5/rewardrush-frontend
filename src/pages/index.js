@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { getLoggedInUser, fetchLiveUser } from '../utils/auth';
+import { getLoggedInUser, fetchFreshUserData } from '../utils/auth';
 import { Zap, RefreshCw } from 'lucide-react';
 
 export default function DashboardHome() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
-  const [syncing, setSyncing] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const local = getLoggedInUser();
@@ -18,18 +18,28 @@ export default function DashboardHome() {
     }
     setCurrentUser(local);
 
-    // Live Database Sync on every load
-    fetchLiveUser().then((liveData) => {
-      if (liveData) setCurrentUser(liveData);
-      setSyncing(false);
+    // పేజీ ఓపెన్ అయిన వెంటనే డేటాబేస్ ని అడిగి లైవ్ పాయింట్లతో UI ని రీ-రెండర్ చేస్తుంది
+    fetchFreshUserData().then((freshData) => {
+      if (freshData) {
+        setCurrentUser(freshData);
+      }
+      setLoading(false);
     });
+
+    const handleUpdate = () => {
+      const u = getLoggedInUser();
+      if (u) setCurrentUser(u);
+    };
+
+    window.addEventListener('walletUpdated', handleUpdate);
+    return () => window.removeEventListener('walletUpdated', handleUpdate);
   }, [router]);
 
   if (!currentUser) return null;
 
   const points = currentUser.points || 0;
   const progressPercent = Math.min(100, ((points / 4900) * 100).toFixed(1));
-  const displayName = currentUser.name && currentUser.name.trim() !== '' ? currentUser.name : 'Member';
+  const displayName = currentUser.name || 'Member';
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-24">
@@ -50,7 +60,7 @@ export default function DashboardHome() {
         <div className="flex items-center justify-between">
           <div>
             <span className="text-[11px] uppercase tracking-wider text-[#94A3B8] font-bold flex items-center gap-1.5">
-              Available Live Balance {syncing && <RefreshCw size={10} className="animate-spin text-[#818CF8]" />}
+              Available Live Balance {loading && <RefreshCw size={10} className="animate-spin text-[#818CF8]" />}
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <h2 className="text-3xl font-black text-white">{points} <span className="text-sm font-normal text-[#818CF8]">pts</span></h2>
