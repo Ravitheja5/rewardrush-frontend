@@ -1,172 +1,137 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
-import { apiRequest } from '../utils/api';
 import { ShieldCheck, CheckCircle2, Clock, Users, RefreshCw } from 'lucide-react';
 
-export default function AdminDashboard() {
-  const [secret, setSecret] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [data, setData] = useState([]);
-  const [stats, setStats] = useState({ total_users: 0, pending_recharges: 0, completed_recharges: 0 });
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState('');
+export default function AdminPage() {
+  const [data, setData] = useState({ redemptions: [], users: [] });
+  const [loading, setLoading] = useState(true);
 
-  const fetchAdminData = async (adminSecret) => {
+  const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rewards-app-backend-lq2v.onrender.com'}/api/admin/recharges`, {
-        headers: { 'admin-secret': adminSecret }
-      });
-      const result = await res.json();
-      if (result.success) {
-        setIsAuthenticated(true);
-        setData(result.data || []);
-        if (result.stats) setStats(result.stats);
-      } else {
-        setMsg('❌ Invalid Admin Secret Key');
+      const res = await fetch('https://rewards-app-backend-lq2v.onrender.com/api/admin/redemptions');
+      const json = await res.json();
+      if (json.success) {
+        setData(json);
       }
-    } catch (err) {
-      setMsg('❌ Error connecting to backend');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    fetchAdminData(secret);
-  };
+  useEffect(() => {
+    fetchAdminData();
+  }, []);
 
   const updateStatus = async (id, status) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rewards-app-backend-lq2v.onrender.com'}/api/admin/recharge/status`, {
+      await fetch('https://rewards-app-backend-lq2v.onrender.com/api/admin/redemptions/update', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'admin-secret': secret
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status })
       });
-      const result = await res.json();
-      if (result.success) {
-        fetchAdminData(secret);
-      }
-    } catch (err) {
-      alert('Status update failed');
+      fetchAdminData();
+    } catch (e) {
+      alert('Error updating status');
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center p-4">
-        <Head><title>Admin Access | RewardRush</title></Head>
-        <form onSubmit={handleLogin} className="max-w-sm w-full bg-[#101522] border border-[#252C3D] p-6 rounded-2xl space-y-4">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="text-[#818CF8]" size={20} />
-            <h2 className="text-sm font-bold text-white">RewardRush Admin</h2>
-          </div>
-          {msg && <p className="text-xs text-red-400">{msg}</p>}
-          <input
-            type="password"
-            value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-            placeholder="Enter Admin Secret"
-            className="w-full bg-[#0B0F17] border border-[#252C3D] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#6366F1]"
-            required
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs rounded-xl shadow transition"
-          >
-            {loading ? 'Authenticating...' : 'Access Dashboard'}
-          </button>
-        </form>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-24">
-      <Head><title>Admin Panel | RewardRush</title></Head>
+    <div className="max-w-4xl mx-auto space-y-6 pb-28 px-4 pt-6 text-white">
+      <Head>
+        <title>Admin Dashboard | RewardRush</title>
+      </Head>
 
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <ShieldCheck className="text-[#818CF8]" size={20} /> Admin Redemption Console
-        </h2>
+        <div>
+          <h1 className="text-2xl font-black flex items-center gap-2">
+            <ShieldCheck className="text-emerald-400" /> Admin Redemption Control
+          </h1>
+          <p className="text-xs text-[#94A3B8]">Approve ₹49 Unlimited Data Pack requests</p>
+        </div>
         <button
-          onClick={() => fetchAdminData(secret)}
-          className="p-2 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1] rounded-xl text-white text-xs flex items-center gap-1.5 transition"
+          onClick={fetchAdminData}
+          className="p-2.5 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1] rounded-xl text-xs flex items-center gap-1.5"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
         </button>
       </div>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="p-4 bg-[#101522] border border-[#252C3D] rounded-xl">
-          <span className="text-[11px] text-[#94A3B8]">Total Registered Users</span>
-          <p className="text-xl font-black text-white mt-1">{stats.total_users || 0}</p>
-        </div>
-        <div className="p-4 bg-[#101522] border border-amber-500/20 rounded-xl">
-          <span className="text-[11px] text-amber-400">Pending Recharges</span>
-          <p className="text-xl font-black text-amber-400 mt-1">{stats.pending_recharges || 0}</p>
-        </div>
-        <div className="p-4 bg-[#101522] border border-emerald-500/20 rounded-xl">
-          <span className="text-[11px] text-emerald-400">Completed Recharges</span>
-          <p className="text-xl font-black text-emerald-400 mt-1">{stats.completed_recharges || 0}</p>
-        </div>
-      </div>
+      {/* REDEMPTIONS TABLE */}
+      <div className="p-6 bg-[#101522] border border-[#252C3D] rounded-2xl space-y-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-[#94A3B8]">
+          Pending ₹49 Mobile Recharge Orders ({data.redemptions.length})
+        </h2>
 
-      {/* Queue Table */}
-      <div className="bg-[#101522] border border-[#252C3D] rounded-2xl overflow-hidden">
-        <div className="p-4 border-b border-[#252C3D]">
-          <h3 className="text-xs font-bold text-white uppercase tracking-wider">Recharge Requests</h3>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#0B0F17] text-[#94A3B8] border-b border-[#252C3D]">
-              <tr>
-                <th className="p-3">User</th>
-                <th className="p-3">Target Mobile</th>
-                <th className="p-3">Operator</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#252C3D] text-white">
-              {data.length === 0 ? (
+        {data.redemptions.length === 0 ? (
+          <p className="text-xs text-[#94A3B8]">Ippativaraku e redemption requests levu.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-[#252C3D] text-[#94A3B8]">
                 <tr>
-                  <td colSpan="6" className="p-6 text-center text-[#94A3B8]">No recharge requests logged yet.</td>
+                  <th className="py-2.5">User Phone</th>
+                  <th>Target Mobile</th>
+                  <th>Operator</th>
+                  <th>Pack</th>
+                  <th>Status</th>
+                  <th>Action</th>
                 </tr>
-              ) : (
-                data.map((row) => (
-                  <tr key={row.id} className="hover:bg-[#151B2B] transition">
-                    <td className="p-3">{row.user_name || 'User'} ({row.account_phone})</td>
-                    <td className="p-3 font-mono font-bold text-[#818CF8]">{row.phone}</td>
-                    <td className="p-3 uppercase">{row.operator}</td>
-                    <td className="p-3 font-bold text-[#34D399]">₹{row.amount}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                        {row.status}
+              </thead>
+              <tbody className="divide-y divide-[#252C3D]/60">
+                {data.redemptions.map((r) => (
+                  <tr key={r.id}>
+                    <td className="py-3 font-mono">{r.phone}</td>
+                    <td className="font-mono text-emerald-400 font-bold">{r.target_phone}</td>
+                    <td><span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 font-bold">{r.operator}</span></td>
+                    <td>{r.pack_name} ({r.points_spent} pts)</td>
+                    <td>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        r.status === 'COMPLETED' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                      }`}>
+                        {r.status}
                       </span>
                     </td>
-                    <td className="p-3 text-right">
-                      {row.status === 'Pending' && (
+                    <td>
+                      {r.status === 'PENDING' ? (
                         <button
-                          onClick={() => updateStatus(row.id, 'Completed')}
-                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold transition shadow"
+                          onClick={() => updateStatus(r.id, 'COMPLETED')}
+                          className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold"
                         >
-                          Mark Completed
+                          Mark Recharged
                         </button>
+                      ) : (
+                        <span className="text-[#94A3B8] text-[10px]">Recharged ✅</span>
                       )}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* REGISTERED USERS LIST */}
+      <div className="p-6 bg-[#101522] border border-[#252C3D] rounded-2xl space-y-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-[#94A3B8] flex items-center gap-2">
+          <Users size={16} /> All Live Users in PostgreSQL ({data.users.length})
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {data.users.map((u) => (
+            <div key={u.id} className="p-3 bg-[#0B0F17] border border-[#252C3D] rounded-xl flex justify-between items-center text-xs">
+              <div>
+                <p className="font-bold text-white">{u.name}</p>
+                <p className="text-[#94A3B8]">{u.phone}</p>
+              </div>
+              <div className="text-right">
+                <span className="text-emerald-400 font-black">{u.points} pts</span>
+                <p className="text-[10px] text-[#94A3B8]">{u.daily_task_count || 0}/130 tasks</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

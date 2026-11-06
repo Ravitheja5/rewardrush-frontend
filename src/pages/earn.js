@@ -2,39 +2,58 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getAuthSession, fetchLiveUserFromDB } from '../utils/auth';
-import { ExternalLink, CheckCircle, Clock, ShieldAlert } from 'lucide-react';
+import { ExternalLink, CheckCircle, Clock, Zap, Award, Flame } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('smartlinks'); // 'smartlinks' (Stream 1) vs 'partner' (Stream 2)
   const [activeTask, setActiveTask] = useState(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [claiming, setClaiming] = useState(false);
   const [statusMsg, setStatusMsg] = useState(null);
   const adWindowRef = useRef(null);
 
-  // FIXED ADSTERRA SMARTLINKS (Rule-based)
-  const availableTasks = [
+  const smartlinkUrl = 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a';
+
+  // STREAM 1: Daily Adsterra Smartlink Tasks (Target: 130 Tasks/Day @ 40 pts each)
+  const smartlinkTasks = Array.from({ length: 30 }, (_, i) => ({
+    id: `smartlink_task_${i + 1}`,
+    title: `Sponsor Ad Task #${i + 1}`,
+    points: 40,
+    seconds: 60,
+    url: smartlinkUrl,
+    type: 'Smartlink 60s'
+  }));
+
+  // STREAM 2: High Commission Affiliate Offers (Fast Points to reach ₹49 Pack)
+  const highCommissionOffers = [
     {
-      id: 'adsterra_task_1',
-      title: 'Adsterra Smartlink Offer 1',
-      points: 100,
-      staySeconds: 60,
-      url: 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a'
+      id: 'cpa_offer_1',
+      title: 'FinTech Savings App Install & Explore',
+      points: 500,
+      seconds: 60,
+      rewardText: '₹5.00 Value',
+      url: smartlinkUrl,
+      type: 'High Commission'
     },
     {
-      id: 'adsterra_task_2',
-      title: 'Adsterra Smartlink Offer 2',
-      points: 75,
-      staySeconds: 60,
-      url: 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a'
+      id: 'cpa_offer_2',
+      title: 'Instant Credit Score Check Partner',
+      points: 400,
+      seconds: 60,
+      rewardText: '₹4.00 Value',
+      url: smartlinkUrl,
+      type: 'High Commission'
     },
     {
-      id: 'adsterra_task_3',
-      title: 'Adsterra Smartlink Offer 3',
-      points: 50,
-      staySeconds: 60,
-      url: 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a'
+      id: 'cpa_offer_3',
+      title: 'Verified Cashback Portal Sign Up',
+      points: 350,
+      seconds: 60,
+      rewardText: '₹3.50 Value',
+      url: smartlinkUrl,
+      type: 'High Commission'
     }
   ];
 
@@ -52,7 +71,7 @@ export default function TasksPage() {
     loadData();
   }, [router]);
 
-  // Anti-Cheat: 60s Stay & Tab Close Detection
+  // Mandatory 60s view & Tab close anti-cheat
   useEffect(() => {
     let timer;
     if (activeTask && secondsLeft > 0) {
@@ -60,7 +79,7 @@ export default function TasksPage() {
         if (adWindowRef.current && adWindowRef.current.closed) {
           setStatusMsg({
             type: 'error',
-            text: 'Offer window close chesaru! Poorthiga 60 seconds stay mandatory. Task reset aindi.'
+            text: 'Offer tab ventane close chesaru! Poorthiga 60 seconds aagalsinde. Task reset aindi.'
           });
           setActiveTask(null);
           setSecondsLeft(0);
@@ -77,7 +96,7 @@ export default function TasksPage() {
     const win = window.open(task.url, '_blank', 'noopener=false');
     adWindowRef.current = win;
     setActiveTask(task);
-    setSecondsLeft(task.staySeconds);
+    setSecondsLeft(task.seconds);
   };
 
   const handleClaimPoints = async () => {
@@ -99,13 +118,13 @@ export default function TasksPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Task claim cheyadam fail aindi');
+        throw new Error(data.message || 'Points claim failed');
       }
 
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: `🎉 +${activeTask.points} Points direct ga PostgreSQL database balance ki credit ayyayi!`
+        text: `🎉 +${activeTask.points} Points direct ga mee PostgreSQL DB balance ki add ayyayi!`
       });
       setActiveTask(null);
 
@@ -122,24 +141,26 @@ export default function TasksPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-white">
-        <p className="text-xs text-[#94A3B8]">Database nundi live data fetch chesthunnam...</p>
+        <p className="text-xs text-[#94A3B8]">Loading live balance from DB...</p>
       </div>
     );
   }
 
+  const tasksToDisplay = activeTab === 'smartlinks' ? smartlinkTasks : highCommissionOffers;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-28 px-4 pt-4">
       <Head>
-        <title>Adsterra Tasks | RewardRush</title>
+        <title>Tasks & Offers | RewardRush</title>
       </Head>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white">Daily Tasks & Ads</h1>
-          <p className="text-xs text-[#94A3B8]">Mee Adsterra Smartlinks tho 60 seconds tasks</p>
+          <h1 className="text-xl sm:text-2xl font-black text-white">Daily Tasks Hub</h1>
+          <p className="text-xs text-[#94A3B8]">Complete tasks to claim ₹49 Data Pack (4,900 pts)</p>
         </div>
         <div className="px-3 py-1.5 bg-[#1E1B4B] border border-[#6366F1]/30 rounded-xl text-right">
-          <span className="text-[10px] text-[#94A3B8] block">Live DB Balance</span>
+          <span className="text-[10px] text-[#94A3B8] block">Live Balance</span>
           <span className="text-sm font-black text-emerald-400">{user.points} pts</span>
         </div>
       </div>
@@ -152,21 +173,41 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* ACTIVE TASK WITH 60s COUNTDOWN */}
+      {/* 2 COMMISSION STREAM TABS */}
+      <div className="grid grid-cols-2 gap-2 p-1.5 bg-[#101522] border border-[#252C3D] rounded-2xl">
+        <button
+          onClick={() => setActiveTab('smartlinks')}
+          className={`py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+            activeTab === 'smartlinks' ? 'bg-[#6366F1] text-white shadow-md' : 'text-[#94A3B8] hover:text-white'
+          }`}
+        >
+          <Zap size={14} /> 60s Ad Tasks (Daily 130)
+        </button>
+        <button
+          onClick={() => setActiveTab('partner')}
+          className={`py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+            activeTab === 'partner' ? 'bg-amber-500 text-black shadow-md' : 'text-[#94A3B8] hover:text-white'
+          }`}
+        >
+          <Flame size={14} /> High-Commission Offers
+        </button>
+      </div>
+
+      {/* ACTIVE RUNNING TASK BANNER */}
       {activeTask && (
         <div className="p-5 bg-[#1E1B4B] border-2 border-[#6366F1] rounded-2xl space-y-3 shadow-xl">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white flex items-center gap-2">
               <Clock size={16} className="text-[#818CF8] animate-spin" /> {activeTask.title}
             </span>
-            <span className="text-xs font-bold text-amber-400">+{activeTask.points} Pts</span>
+            <span className="text-xs font-black text-amber-400">+{activeTask.points} Pts</span>
           </div>
 
           <p className="text-xs text-[#94A3B8]">
             {secondsLeft > 0 ? (
               <span>Ad page open lo unchandi: <strong className="text-amber-400 text-sm">{secondsLeft}s</strong></span>
             ) : (
-              <span className="text-emerald-400 font-bold">✅ 60 seconds finished! Claim points.</span>
+              <span className="text-emerald-400 font-bold">✅ 60 seconds finished! Claim your points below.</span>
             )}
           </p>
 
@@ -179,24 +220,30 @@ export default function TasksPage() {
                 : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg'
             }`}
           >
-            <CheckCircle size={15} /> {claiming ? 'Saving in PostgreSQL...' : `Claim ${activeTask.points} Points`}
+            <CheckCircle size={15} /> {claiming ? 'Updating DB...' : `Claim ${activeTask.points} Points`}
           </button>
         </div>
       )}
 
+      {/* TASK LIST */}
       <div className="space-y-3">
-        {availableTasks.map((t) => (
+        {tasksToDisplay.map((t) => (
           <div key={t.id} className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-2xl flex items-center justify-between transition">
-            <div>
+            <div className="space-y-0.5">
               <h3 className="text-sm font-bold text-white">{t.title}</h3>
-              <p className="text-xs text-[#94A3B8]">Anti-Cheat Active • 60 Sec Stay Required</p>
-              <span className="text-xs font-bold text-emerald-400">+{t.points} Points</span>
+              <p className="text-xs text-[#94A3B8]">60s Stay • Instant DB Credit</p>
+              <div className="flex items-center gap-2 pt-1">
+                <span className="text-xs font-bold text-emerald-400">+{t.points} Points</span>
+                {t.rewardText && <span className="text-[10px] text-amber-400 font-semibold">({t.rewardText})</span>}
+              </div>
             </div>
             <button
               onClick={() => handleStartTask(t)}
               disabled={activeTask !== null}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
-                activeTask !== null ? 'bg-gray-800 text-gray-600 cursor-not-allowed' : 'bg-[#6366F1] text-white hover:bg-[#4F46E5]'
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
+                activeTask !== null
+                  ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                  : 'bg-[#6366F1] hover:bg-[#4F46E5] text-white shadow-md'
               }`}
             >
               Start <ExternalLink size={13} />
