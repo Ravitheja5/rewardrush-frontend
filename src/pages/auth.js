@@ -17,14 +17,17 @@ export default function AuthPage() {
     setError('');
     setLoading(true);
 
+    const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://rewards-app-backend-lq2v.onrender.com';
+    const backendUrl = 'https://rewards-app-backend-lq2v.onrender.com';
 
     try {
-      const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
-      const res = await fetch(`${apiUrl}${endpoint}`, {
+      const res = await fetch(`${backendUrl}${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(
           isLogin 
             ? { phone: cleanPhone, password } 
@@ -38,11 +41,15 @@ export default function AuthPage() {
         throw new Error(data.message || 'Authentication failed');
       }
 
-      // Live DB Data ni direct ga localStorage lo set chesthunnam
+      // Database nundi vachina live data ni direct ga store chesthunnam
       localStorage.setItem('rr_user', JSON.stringify(data.user));
       window.location.href = '/';
     } catch (err) {
-      setError(err.message);
+      console.error('Auth error:', err);
+      setError(err.message === 'Failed to fetch' 
+        ? 'Backend server connect avvatledhu. Render awake avthondi, 10 seconds lo malli try cheyandi.' 
+        : err.message
+      );
     } finally {
       setLoading(false);
     }
@@ -127,13 +134,14 @@ export default function AuthPage() {
             disabled={loading}
             className="w-full py-3 bg-[#6366F1] hover:bg-[#4F46E5] text-white text-xs font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2"
           >
-            {loading ? 'Processing...' : (isLogin ? 'Login to Dashboard' : 'Register Now')}
+            {loading ? 'Connecting...' : (isLogin ? 'Login to Dashboard' : 'Register Now')}
             <ArrowRight size={14} />
           </button>
         </form>
 
         <div className="text-center pt-2">
           <button
+            type="button"
             onClick={() => { setIsLogin(!isLogin); setError(''); }}
             className="text-xs text-[#818CF8] hover:underline"
           >
