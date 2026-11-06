@@ -76,7 +76,7 @@ export default function RewardsPage() {
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: `Recharge order placed successfully! Order ID: #${data.redemption?.id || data.orderId || 'REQ-LIVE'}. Status: PENDING Admin Approval.`
+        text: 'Recharge order placed successfully! Order ID: #' + (data.redemption?.id || data.orderId || 'REQ-LIVE') + '. Status: PENDING Admin Approval.'
       });
     } catch (err) {
       setStatusMsg({ type: 'error', text: err.message });
@@ -110,11 +110,11 @@ export default function RewardsPage() {
       </div>
 
       {statusMsg && (
-        <div className={`p-4 rounded-xl text-xs font-medium border flex items-center gap-2 ${
+        <div className={'p-4 rounded-xl text-xs font-medium border flex items-center gap-2 ' + (
           statusMsg.type === 'success'
             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
             : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-        }`}>
+        )}>
           {statusMsg.type === 'success' ? <CheckCircle2 size={16} className="shrink-0" /> : <AlertCircle size={16} className="shrink-0" />}
           <span>{statusMsg.text}</span>
         </div>
@@ -147,11 +147,11 @@ export default function RewardsPage() {
                   key={op}
                   type="button"
                   onClick={() => setOperator(op)}
-                  className={`py-2.5 text-xs font-bold rounded-xl border transition ${
+                  className={'py-2.5 text-xs font-bold rounded-xl border transition ' + (
                     operator === op
                       ? 'bg-[#6366F1] border-[#6366F1] text-white shadow-md'
                       : 'bg-[#0B0F17] border-[#252C3D] text-[#94A3B8] hover:border-gray-600'
-                  }`}
+                  )}
                 >
                   {op}
                 </button>
@@ -176,11 +176,11 @@ export default function RewardsPage() {
           <button
             onClick={handleRedeem}
             disabled={redeeming || Number(user.points) < 4900}
-            className={`w-full py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
+            className={'w-full py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ' + (
               Number(user.points) < 4900
                 ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
                 : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
-            }`}
+            )}
           >
             {redeeming ? 'Processing in Database...' : 'Redeem Now (4,900 Pts)'}
           </button>
