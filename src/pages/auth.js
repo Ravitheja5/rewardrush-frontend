@@ -42,7 +42,7 @@ export default function AuthPage() {
       }
 
       // Database nundi vachina live data ni direct ga store chesthunnam
-      localStorage.setItem('rr_user', JSON.stringify(data.user));
+      // removed local user storage
       window.location.href = '/';
     } catch (err) {
       console.error('Auth error:', err);
