@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { getLoggedInUser, fetchFreshUserData } from '../utils/auth';
+import { getAuthSession, fetchLiveUserFromDB } from '../utils/auth';
 import { Zap, RefreshCw } from 'lucide-react';
 
 export default function DashboardHome() {
@@ -10,30 +10,34 @@ export default function DashboardHome() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const local = getLoggedInUser();
-    if (!local) {
+  const loadData = async () => {
+    setLoading(true);
+    const user = await fetchLiveUserFromDB();
+    if (!user) {
       router.push('/auth');
       return;
     }
-    setCurrentUser(local);
+    setCurrentUser(user);
+    setLoading(false);
+  };
 
-    // పేజీ ఓపెన్ అయిన వెంటనే డేటాబేస్ ని అడిగి లైవ్ పాయింట్లతో UI ని రీ-రెండర్ చేస్తుంది
-    fetchFreshUserData().then((freshData) => {
-      if (freshData) {
-        setCurrentUser(freshData);
-      }
-      setLoading(false);
-    });
-
-    const handleUpdate = () => {
-      const u = getLoggedInUser();
-      if (u) setCurrentUser(u);
-    };
-
-    window.addEventListener('walletUpdated', handleUpdate);
-    return () => window.removeEventListener('walletUpdated', handleUpdate);
+  useEffect(() => {
+    const session = getAuthSession();
+    if (!session) {
+      router.push('/auth');
+      return;
+    }
+    loadData();
   }, [router]);
+
+  if (loading && !currentUser) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-white">
+        <RefreshCw className="animate-spin text-[#6366F1] mb-2" size={32} />
+        <p className="text-xs text-[#94A3B8]">Fetching live data from database...</p>
+      </div>
+    );
+  }
 
   if (!currentUser) return null;
 
@@ -52,7 +56,7 @@ export default function DashboardHome() {
           Welcome back, {displayName} 👋
         </h1>
         <p className="text-xs text-[#94A3B8]">
-          Your real-time earnings and redemption progress
+          Real-time balance directly from database
         </p>
       </div>
 
@@ -85,8 +89,13 @@ export default function DashboardHome() {
         </div>
 
         <div className="text-[11px] text-[#94A3B8] pt-2 border-t border-[#252C3D]/60 flex items-center justify-between">
-          <span>Daily tasks completed: <strong className="text-white">{currentUser.daily_task_count || 0}/130</strong></span>
-          <span className="text-[#34D399] font-medium">Daily reset at 00:00 IST</span>
+          <span>Daily tasks: <strong className="text-white">{currentUser.daily_task_count || 0}/130</strong></span>
+          <button 
+            onClick={loadData}
+            className="text-[#818CF8] hover:underline flex items-center gap-1 text-[11px]"
+          >
+            <RefreshCw size={10} /> Sync Now
+          </button>
         </div>
       </div>
 

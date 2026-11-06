@@ -1,40 +1,37 @@
-export const getLoggedInUser = () => {
+export const getAuthSession = () => {
   if (typeof window === 'undefined') return null;
-  const user = localStorage.getItem('rr_user');
-  return user ? JSON.parse(user) : null;
+  const session = localStorage.getItem('rr_session');
+  return session ? JSON.parse(session) : null;
 };
 
-export const syncWallet = (updatedUser) => {
+export const saveAuthSession = (phone) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('rr_user', JSON.stringify(updatedUser));
-  window.dispatchEvent(new Event('walletUpdated'));
+  // Kevalam phone number matrame browser lo untundhi, points DB lone untayi
+  localStorage.setItem('rr_session', JSON.stringify({ phone }));
 };
 
-// లైవ్ డేటాబేస్ నుండి ప్రతిసారీ ఫ్రెష్ పాయింట్లను లాగే ఫంక్షన్
-export const fetchFreshUserData = async () => {
-  if (typeof window === 'undefined') return null;
-  const local = getLoggedInUser();
-  if (!local || !local.phone) return null;
+export const fetchLiveUserFromDB = async () => {
+  const session = getAuthSession();
+  if (!session || !session.phone) return null;
 
   try {
     const backendUrl = 'https://rewards-app-backend-lq2v.onrender.com';
-    const res = await fetch(`${backendUrl}/api/user/me?phone=${local.phone}`, {
-      headers: { 'Cache-Control': 'no-cache' }
+    const res = await fetch(`${backendUrl}/api/user/me?phone=${session.phone}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
     });
     const data = await res.json();
     if (data.success && data.user) {
-      localStorage.setItem('rr_user', JSON.stringify(data.user));
-      window.dispatchEvent(new Event('walletUpdated'));
       return data.user;
     }
   } catch (err) {
-    console.error('Live sync error:', err);
+    console.error('DB fetch error:', err);
   }
-  return local;
+  return null;
 };
 
 export const logoutUser = () => {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem('rr_user');
+  localStorage.clear();
   window.location.href = '/auth';
 };
