@@ -3,50 +3,58 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getLoggedInUser, syncWallet } from '../utils/auth';
 import { apiRequest } from '../utils/api';
-import { Flame, Play, Loader2, ShieldCheck, CheckCircle2, Smartphone, FileText, CreditCard, ExternalLink, Sparkles } from 'lucide-react';
+import { Flame, Play, Loader2, Sparkles, ExternalLink, CheckCircle2 } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTask, setActiveTask] = useState(null);
   const [timer, setTimer] = useState(0);
-  const [activeCategory, setActiveCategory] = useState('daily_ads');
   const [loading, setLoading] = useState(false);
   const [claimMsg, setClaimMsg] = useState('');
+  const [taskStartTime, setTaskStartTime] = useState(null);
 
-  // 1. Mee Live High-CPM Ad Link
-  const LIVE_AD_URL = 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30';
+  // 1. Mana 2 Live High-CPM Ad Streams
+  const adTasks = [
+    {
+      id: 'ad_stream_1',
+      title: 'Telecom Ad Stream #1',
+      desc: 'Watch sponsor video stream for 15 seconds',
+      points: 40,
+      duration: 15,
+      url: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30'
+    },
+    {
+      id: 'ad_stream_2',
+      title: 'Telecom Ad Stream #2',
+      desc: 'Watch sponsor video stream for 15 seconds',
+      points: 40,
+      duration: 15,
+      url: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30'
+    }
+  ];
 
-  // 130 Daily Instant Ad Tasks (15s duration, 40 pts)
-  const dailyAdsList = Array.from({ length: 130 }, (_, index) => ({
-    id: `ad_task_${index + 1}`,
-    number: index + 1,
-    title: `Telecom Sponsor Video Stream #${index + 1}`,
-    type: 'High-CPM Ad',
-    points: 40,
-    duration: 15,
-    url: LIVE_AD_URL
-  }));
-
-  // 2. High-Ticket Affiliate Partner Tasks (vCommission)
-  const affiliateOffers = {
-    installs: [
-      { id: 'v_happyyou', title: 'HappyYou Android App Install', desc: 'Download app & complete simple registration', points: 1500, tag: 'App Install', url: 'https://network.vcommission.com/click' },
-      { id: 'v_xcel', title: 'Xcelviewpoint Survey Sign-up', desc: 'Quick survey profile completion', points: 1200, tag: 'Survey CPR', url: 'https://network.vcommission.com/click' },
-      { id: 'v_mcd', title: 'McDonalds Official App', desc: 'Install Android app & explore deals', points: 1000, tag: 'Brand CPR', url: 'https://network.vcommission.com/click' }
-    ],
-    leads: [
-      { id: 'v_fatak', title: 'FatakPaisa Free Credit Score', desc: 'Check eligibility with mobile number in 1 min', points: 2000, tag: 'Quick CPL', url: 'https://network.vcommission.com/click' },
-      { id: 'v_fibe', title: 'Fibe Quick Eligibility Check', desc: 'Instant salary/employment verification', points: 2200, tag: 'Free Lead', url: 'https://network.vcommission.com/click' },
-      { id: 'v_fundsbull', title: 'FundsBull Advisory Setup', desc: 'Get free insurance/finance quotes online', points: 1800, tag: 'Free Lead', url: 'https://network.vcommission.com/click' },
-      { id: 'v_financebuddha', title: 'FinanceBuddha Loan Finder', desc: 'Zero-fee loan comparison form submission', points: 1800, tag: 'Quick Lead', url: 'https://network.vcommission.com/click' }
-    ],
-    finance: [
-      { id: 'v_aubank', title: 'AU Bank Lifetime Free Credit Card', desc: 'Complete paperless digital KYC verification', points: 4900, tag: 'Unlock ₹49 Pack', url: 'https://network.vcommission.com/click' },
-      { id: 'v_idfc', title: 'IDFC FIRST WOW Credit Card', desc: 'Zero annual fee instant credit card application', points: 4900, tag: 'Unlock ₹49 Pack', url: 'https://network.vcommission.com/click' },
-      { id: 'v_spinny', title: 'Spinny Assured Car Doorstep Test Drive', desc: 'Book a free doorstep inspection test drive', points: 3500, tag: 'Mega Reward', url: 'https://network.vcommission.com/click' }
-    ]
-  };
+  // 2. vCommission Testing Kosam Select Chesina 2 Partner Campaigns
+  const partnerTasks = [
+    {
+      id: 'vcomm_13145',
+      campaignId: '13145',
+      title: 'Fibe.in Quick Eligibility Check',
+      desc: 'Fill basic salary details to verify instant eligibility (High Payout)',
+      points: 2500,
+      badge: 'CPL - ₹315 Payout',
+      url: 'https://network.vcommission.com/click'
+    },
+    {
+      id: 'vcomm_12592',
+      campaignId: '12592',
+      title: 'Xcelviewpoint Survey Profile Sign-up',
+      desc: 'Complete simple survey registration to qualify',
+      points: 1200,
+      badge: 'CPR - ₹30 Payout',
+      url: 'https://network.vcommission.com/click'
+    }
+  ];
 
   useEffect(() => {
     const user = getLoggedInUser();
@@ -57,7 +65,7 @@ export default function TasksPage() {
     }
   }, [router]);
 
-  // Robust Countdown Timer for Daily Ads
+  // Timer Countdown Logic for Ad Tasks
   useEffect(() => {
     if (!activeTask) return;
 
@@ -91,12 +99,12 @@ export default function TasksPage() {
     setLoading(false);
   };
 
-  // Start 15-second Daily Ad Task
-  const startDailyAdTask = (task) => {
+  const startAdTask = (task) => {
     if ((currentUser.daily_task_count || 0) >= 130) {
-      setClaimMsg('❌ Daily limit (130/130 tasks) completed for today! Midnight reset avthundi.');
+      setClaimMsg('❌ Daily limit reached for today! Reset at midnight.');
       return;
     }
+    setTaskStartTime(Date.now());
     setActiveTask(task);
     setClaimMsg('');
     if (typeof window !== 'undefined') {
@@ -112,42 +120,42 @@ export default function TasksPage() {
       const res = await apiRequest('/api/tasks/complete', 'POST', {
         userId: currentUser.id,
         taskId: activeTask.id,
-        points: activeTask.points
+        points: activeTask.points,
+        clientStartedAt: taskStartTime
       });
 
       if (res.success) {
         syncWallet(res.user);
         setCurrentUser(res.user);
-        setClaimMsg(`🎉 +${activeTask.points} Points Credited to Wallet!`);
+        setClaimMsg(`🎉 +${activeTask.points} Points credited to wallet!`);
       } else {
         setClaimMsg(`❌ ${res.message}`);
       }
     } catch (err) {
-      setClaimMsg('❌ Verification server issue. Try again.');
+      setClaimMsg('❌ Verification issue. Please try again.');
     }
 
     setActiveTask(null);
     setLoading(false);
   };
 
-  // Start High-Ticket Affiliate Task
-  const startAffiliateOffer = (offer) => {
+  const startPartnerTask = (task) => {
     if (!currentUser) return;
-    const finalUrl = `${offer.url}?aff_id=133655&sub1=${currentUser.id}&aff_sub=${currentUser.id}`;
-    window.open(finalUrl, '_blank');
-    setClaimMsg(`🚀 '${offer.title}' opened! S2S verification poorthi ayyaka wallet lo points add avthayi.`);
+    const finalTrackingUrl = `${task.url}?aff_id=133655&sub1=${currentUser.id}&aff_sub=${currentUser.id}`;
+    window.open(finalTrackingUrl, '_blank');
+    setClaimMsg(`🚀 '${task.title}' open ayindi! Verification tarvatha wallet lo points auto-credit avthayi.`);
   };
 
   if (!currentUser) return null;
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto pb-24">
+    <div className="space-y-6 max-w-xl mx-auto pb-24">
       <Head>
-        <title>Earn Points | RewardRush</title>
+        <title>Tasks & Earnings | RewardRush</title>
       </Head>
 
-      {/* Daily Login Streak Card */}
-      <div className="p-5 bg-gradient-to-r from-[#101522] via-[#1E1B4B] to-[#101522] border border-[#6366F1]/30 rounded-2xl flex items-center justify-between">
+      {/* Daily Bonus Banner */}
+      <div className="p-5 bg-gradient-to-r from-[#101522] via-[#1E1B4B] to-[#101522] border border-[#6366F1]/30 rounded-2xl flex items-center justify-between shadow-lg">
         <div>
           <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
             <Flame className="text-amber-400" size={16} /> Daily Login Streak
@@ -169,13 +177,13 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* Floating Verification Countdown Timer for Daily Ads */}
+      {/* Active Ad Countdown Card */}
       {activeTask && (
         <div className="p-4 bg-[#1E1B4B] border-2 border-[#818CF8] rounded-2xl flex items-center justify-between shadow-2xl animate-pulse">
           <div className="flex items-center gap-3">
             <Loader2 className="animate-spin text-[#818CF8]" size={22} />
             <div>
-              <p className="text-xs font-bold text-white">Sponsor Ad Verification Active</p>
+              <p className="text-xs font-bold text-white">Ad Verification Active</p>
               <p className="text-[11px] text-[#A5B4FC]">Please wait {timer}s without closing app</p>
             </div>
           </div>
@@ -186,139 +194,75 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* ALL CATEGORY NAVIGATION TABS */}
-      <div className="grid grid-cols-4 bg-[#101522] p-1.5 rounded-xl border border-[#252C3D] gap-1">
-        <button
-          onClick={() => setActiveCategory('daily_ads')}
-          className={`py-2 text-[11px] font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-            activeCategory === 'daily_ads' ? 'bg-[#6366F1] text-white shadow' : 'text-[#94A3B8] hover:text-white'
-          }`}
-        >
-          <Sparkles size={13} /> 130 Daily Ads
-        </button>
+      {/* SECTION 1: MANA 2 AD STREAM TASKS */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8] flex items-center gap-1.5">
+            <Sparkles size={14} className="text-[#818CF8]" /> Daily Ad Streams (Instant Verification)
+          </h3>
+          <span className="text-xs font-bold text-[#34D399]">Wallet: {currentUser.points || 0} pts</span>
+        </div>
 
-        <button
-          onClick={() => setActiveCategory('installs')}
-          className={`py-2 text-[11px] font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-            activeCategory === 'installs' ? 'bg-[#6366F1] text-white shadow' : 'text-[#94A3B8] hover:text-white'
-          }`}
-        >
-          <Smartphone size={13} /> App Installs
-        </button>
+        <div className="space-y-2.5">
+          {adTasks.map((task) => (
+            <div 
+              key={task.id}
+              className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-xl flex items-center justify-between transition"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white">{task.title}</span>
+                  <span className="text-[10px] bg-[#6366F1]/20 text-[#818CF8] px-2 py-0.5 rounded font-mono">
+                    15s Stream
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#94A3B8]">{task.desc}</p>
+              </div>
 
-        <button
-          onClick={() => setActiveCategory('leads')}
-          className={`py-2 text-[11px] font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-            activeCategory === 'leads' ? 'bg-[#6366F1] text-white shadow' : 'text-[#94A3B8] hover:text-white'
-          }`}
-        >
-          <FileText size={13} /> Quick Leads
-        </button>
-
-        <button
-          onClick={() => setActiveCategory('finance')}
-          className={`py-2 text-[11px] font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-            activeCategory === 'finance' ? 'bg-[#6366F1] text-white shadow' : 'text-[#94A3B8] hover:text-white'
-          }`}
-        >
-          <CreditCard size={13} /> Mega Finance
-        </button>
+              <button
+                onClick={() => startAdTask(task)}
+                disabled={!!activeTask || loading || (currentUser.daily_task_count || 0) >= 130}
+                className="px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] disabled:opacity-40 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow shrink-0"
+              >
+                <Play size={12} fill="white" /> Start <span className="text-[#34D399]">+{task.points}</span>
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* TAB CONTENT: 130 DAILY ADS POOL */}
-      {activeCategory === 'daily_ads' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
-              Daily 15s Ad Tasks ({currentUser.daily_task_count || 0}/130 Completed)
-            </h3>
-            <span className="text-xs font-bold text-[#34D399]">
-              Goal: 4,900 pts (₹49 Data Pack)
-            </span>
-          </div>
+      {/* SECTION 2: vCOMMISSION 2 APPROVED OFFERS */}
+      <div className="space-y-3 pt-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+          High Reward Partner Campaigns (vCommission)
+        </h3>
 
-          <div className="space-y-2.5">
-            {dailyAdsList.map((task, idx) => {
-              const isCompleted = idx < (currentUser.daily_task_count || 0);
-
-              return (
-                <div 
-                  key={task.id}
-                  className={`p-4 bg-[#101522] border rounded-xl flex items-center justify-between transition ${
-                    isCompleted ? 'border-[#1C2231] opacity-50' : 'border-[#252C3D] hover:border-[#6366F1]/50'
-                  }`}
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-white">{task.title}</span>
-                      <span className="text-[10px] bg-[#6366F1]/20 text-[#818CF8] px-2 py-0.5 rounded font-mono">
-                        15s Stream
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#94A3B8]">View sponsor link for 15 seconds to credit points</p>
-                  </div>
-
-                  {isCompleted ? (
-                    <span className="text-xs font-bold text-[#34D399] flex items-center gap-1">
-                      <CheckCircle2 size={16} /> Completed
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => startDailyAdTask(task)}
-                      disabled={!!activeTask || loading || (currentUser.daily_task_count || 0) >= 130}
-                      className="px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] disabled:opacity-40 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow"
-                    >
-                      <Play size={12} fill="white" /> Start <span className="text-[#34D399]">+{task.points}</span>
-                    </button>
-                  )}
+        <div className="space-y-2.5">
+          {partnerTasks.map((task) => (
+            <div 
+              key={task.id}
+              className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-xl flex items-center justify-between transition gap-4"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-white">{task.title}</h4>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono">
+                    {task.badge}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* TAB CONTENT: HIGH VALUE AFFILIATE OFFERS */}
-      {activeCategory !== 'daily_ads' && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
-              {activeCategory === 'installs' && 'Instant App Installs & Survey Registrations'}
-              {activeCategory === 'leads' && 'Free Financial Eligibility & Quick CPL Submissions'}
-              {activeCategory === 'finance' && 'High Payout Products (Instant 4,900 pts Unlock)'}
-            </h3>
-            <span className="text-xs font-bold text-[#34D399]">
-              Balance: {currentUser.points || 0} pts
-            </span>
-          </div>
-
-          <div className="space-y-2.5">
-            {affiliateOffers[activeCategory].map((offer) => (
-              <div 
-                key={offer.id}
-                className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-xl flex items-center justify-between transition gap-4"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-bold text-white">{offer.title}</h4>
-                    <span className="text-[10px] bg-[#6366F1]/20 text-[#818CF8] px-2 py-0.5 rounded font-mono">
-                      {offer.tag}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#94A3B8]">{offer.desc}</p>
-                </div>
-
-                <button
-                  onClick={() => startAffiliateOffer(offer)}
-                  className="shrink-0 px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow"
-                >
-                  Claim <span className="text-[#34D399]">+{offer.points} pts</span> <ExternalLink size={12} />
-                </button>
+                <p className="text-[11px] text-[#94A3B8]">{task.desc}</p>
               </div>
-            ))}
-          </div>
+
+              <button
+                onClick={() => startPartnerTask(task)}
+                className="shrink-0 px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow"
+              >
+                Claim <span className="text-[#34D399]">+{task.points}</span> <ExternalLink size={12} />
+              </button>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
