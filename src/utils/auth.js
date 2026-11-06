@@ -10,7 +10,8 @@ export const getAuthSession = () => {
 
 export const saveAuthSession = (phone) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('rr_session', JSON.stringify({ phone }));
+  const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+  localStorage.setItem('rr_session', JSON.stringify({ phone: cleanPhone }));
 };
 
 export const fetchLiveUserFromDB = async () => {
@@ -18,7 +19,9 @@ export const fetchLiveUserFromDB = async () => {
   const phone = session?.phone || '6300442917';
 
   try {
-    const res = await fetch(`https://rewards-app-backend-lq2v.onrender.com/api/user/me?phone=${phone}`);
+    const res = await fetch(`https://rewards-app-backend-lq2v.onrender.com/api/user/me?phone=${phone}`, {
+      cache: 'no-store'
+    });
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.user) {
@@ -26,21 +29,18 @@ export const fetchLiveUserFromDB = async () => {
       }
     }
   } catch (err) {
-    console.error('Fetch error:', err);
+    console.error('Fetch DB Error:', err);
   }
-  
-  return { id: 1, name: 'Ravitheja Ediga', phone: phone, points: 10000, daily_task_count: 0 };
+  return null;
 };
 
 export const getLoggedInUser = () => {
   const session = getAuthSession();
-  return { phone: session?.phone || '6300442917', name: 'Ravitheja' };
+  return { phone: session?.phone || '6300442917', name: 'User' };
 };
 
 export const syncWallet = (userData) => {
-  if (userData?.phone) {
-    saveAuthSession(userData.phone);
-  }
+  if (userData?.phone) saveAuthSession(userData.phone);
 };
 
 export const getAllUsers = () => [];
