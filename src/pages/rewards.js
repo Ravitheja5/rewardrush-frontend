@@ -76,7 +76,7 @@ export default function RewardsPage() {
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: `Recharge order placed successfully! Order ID: #${data.redemption?.id || data.orderId || 'REQ-LIVE'}. Status: PENDING Admin Approval.`
+        text: 'Recharge order placed successfully! Order ID: #' + (data.redemption?.id || data.orderId || 'REQ-LIVE') + '. Status: PENDING Admin Approval.'
       });
     } catch (err) {
       setStatusMsg({ type: 'error', text: err.message });
