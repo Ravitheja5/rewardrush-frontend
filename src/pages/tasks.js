@@ -6,32 +6,28 @@ import { ExternalLink, CheckCircle, Clock, Zap } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({ name: 'Member', phone: '6300442917', points: 10000 });
   const [activeTask, setActiveTask] = useState(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [claiming, setClaiming] = useState(false);
   const [statusMsg, setStatusMsg] = useState(null);
   const adWindowRef = useRef(null);
 
-  // Brand safe partner offer links (Zero Safe Browsing flags)
   const safeOffers = [
-    { id: 'task_sponsor_1', title: 'Special Telecom Sponsor Deal', points: 100, url: 'https://www.google.com/search?q=best+prepaid+data+recharge+plans' },
-    { id: 'task_sponsor_2', title: 'Top FinTech Partner Offer', points: 75, url: 'https://www.google.com/search?q=instant+cashback+reward+apps' },
-    { id: 'task_sponsor_3', title: 'Daily Featured Discovery', points: 50, url: 'https://www.google.com/search?q=mobile+recharge+offers+today' }
+    { id: 'task_sponsor_1', title: 'Sponsored High-Value Brand Offer', points: 100, url: 'https://www.google.com/search?q=prepaid+data+recharge+deals' },
+    { id: 'task_sponsor_2', title: 'FinTech Cashback & Rewards Portal', points: 75, url: 'https://www.google.com/search?q=best+fintech+cashback+offers' },
+    { id: 'task_sponsor_3', title: 'Daily Featured Discovery Promo', points: 50, url: 'https://www.google.com/search?q=instant+discount+recharge+deals' }
   ];
 
-  const loadData = async () => {
+  useEffect(() => {
     const session = getAuthSession();
     if (!session || !session.phone) {
       router.push('/auth');
       return;
     }
-    const liveUser = await fetchLiveUserFromDB();
-    if (liveUser) setUser(liveUser);
-  };
-
-  useEffect(() => {
-    loadData();
+    fetchLiveUserFromDB().then((u) => {
+      if (u) setUser(u);
+    });
   }, [router]);
 
   useEffect(() => {
@@ -67,8 +63,7 @@ export default function TasksPage() {
     setStatusMsg(null);
 
     try {
-      const backendUrl = 'https://rewards-app-backend-lq2v.onrender.com';
-      const res = await fetch(`${backendUrl}/api/tasks/claim`, {
+      const res = await fetch('https://rewards-app-backend-lq2v.onrender.com/api/tasks/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,16 +94,8 @@ export default function TasksPage() {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] text-white">
-        <p className="text-xs text-[#94A3B8]">Loading live balance...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-24 px-4 pt-4">
+    <div className="max-w-2xl mx-auto space-y-6 pb-28 px-4 pt-4">
       <Head>
         <title>Daily Tasks | RewardRush</title>
       </Head>
@@ -116,10 +103,10 @@ export default function TasksPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-white">Daily Tasks Hub</h1>
-          <p className="text-xs text-[#94A3B8]">Complete 60-second verified partner offers</p>
+          <p className="text-xs text-[#94A3B8]">Complete 60s verified partner offers to earn points</p>
         </div>
         <div className="px-3 py-1.5 bg-[#1E1B4B] border border-[#6366F1]/30 rounded-xl text-right">
-          <span className="text-[10px] text-[#94A3B8] block">Balance</span>
+          <span className="text-[10px] text-[#94A3B8] block">Live Balance</span>
           <span className="text-sm font-black text-emerald-400">{user.points} pts</span>
         </div>
       </div>
@@ -143,9 +130,9 @@ export default function TasksPage() {
 
           <p className="text-xs text-[#94A3B8]">
             {secondsLeft > 0 ? (
-              <span>Offer screen meeda undandi: <strong className="text-amber-400 text-sm">{secondsLeft}s</strong></span>
+              <span>Offer page open lo unchandi: <strong className="text-amber-400 text-sm">{secondsLeft}s</strong></span>
             ) : (
-              <span className="text-emerald-400 font-bold">✅ 60 seconds finished! Claim below.</span>
+              <span className="text-emerald-400 font-bold">✅ 60 seconds finished! Claim your points below.</span>
             )}
           </p>
 
@@ -165,7 +152,7 @@ export default function TasksPage() {
 
       <div className="space-y-3">
         {safeOffers.map((t) => (
-          <div key={t.id} className="p-4 bg-[#101522] border border-[#252C3D] rounded-2xl flex items-center justify-between">
+          <div key={t.id} className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-2xl flex items-center justify-between transition">
             <div>
               <h3 className="text-sm font-bold text-white">{t.title}</h3>
               <p className="text-xs text-[#94A3B8]">60s stay required • Anti-cheat verified</p>
