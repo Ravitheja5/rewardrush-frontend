@@ -41,7 +41,7 @@ export default function AuthPage() {
       saveAuthSession(formData.phone.trim());
 
       // Redirect directly to dashboard
-      router.push('/');
+      window.location.href = '/';
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
