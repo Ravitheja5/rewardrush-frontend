@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getAuthSession, fetchLiveUserFromDB } from '../utils/auth';
-import { ExternalLink, CheckCircle, Clock, Zap, Flame } from 'lucide-react';
+import { ExternalLink, CheckCircle, Clock, Zap, Flame, ShieldCheck } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
@@ -14,68 +14,43 @@ export default function TasksPage() {
   const [statusMsg, setStatusMsg] = useState(null);
   const adWindowRef = useRef(null);
 
-  const smartlinkUrl = 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a';
+  const adsterraUrl = 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a';
+  const monetagUrl = 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a';
 
-  // 130 Tasks x 38 Points = 4,940 Points (Full ₹49 Data Pack Opportunity)
-  const dailyAdTasks = Array.from({ length: 130 }, (_, i) => ({
-    id: `ad_task_${i + 1}`,
-    title: `Sponsored Ad Task #${i + 1}`,
-    points: 38,
-    seconds: 60,
-    url: smartlinkUrl,
-    badge: `Task ${i + 1}/130`
-  }));
+  // 130 Daily Ads: 65 Monetag + 65 Adsterra @ 38 points each = 4,940 Points (₹49 pack guarantee)
+  const dailyAds = Array.from({ length: 130 }, (_, i) => {
+    const isMonetag = i % 2 === 0;
+    return {
+      id: `ad_${isMonetag ? 'monetag' : 'adsterra'}_${i + 1}`,
+      title: `${isMonetag ? 'Monetag' : 'Adsterra'} Video & Web Task #${i + 1}`,
+      provider: isMonetag ? 'Monetag Network' : 'Adsterra Network',
+      points: 38,
+      seconds: 60,
+      url: isMonetag ? monetagUrl : adsterraUrl,
+      badge: `Task ${i + 1}/130`
+    };
+  });
 
-  // High Commission vCommission Campaigns
-  const vCommissionOffers = [
+  // ONLY 2 vCommission Campaigns: Fibe.in and Xcelview.com CPR
+  const vCommissionCampaigns = [
     {
-      id: 'vcomm_kotak811',
-      title: 'Kotak 811 Zero Balance Savings Account',
-      category: 'Banking',
+      id: 'vcomm_fibe_in',
+      title: 'Fibe.in - Instant Personal Loan & Credit',
+      provider: 'vCommission Financial',
+      desc: 'Complete quick digital loan eligibility registration on Fibe.in.',
       points: 2500,
       rewardValue: '₹25.00 Value',
-      desc: 'Open a verified zero-balance digital savings account online.',
-      url: smartlinkUrl,
+      url: 'https://vcommission.com/aff_c?offer_id=fibe_in',
       seconds: 60
     },
     {
-      id: 'vcomm_angelone',
-      title: 'Angel One Free Demat Account Opening',
-      category: 'FinTech',
+      id: 'vcomm_xcelview_cpr',
+      title: 'Xcelview.com - Digital CPR Campaign',
+      provider: 'vCommission CPR',
+      desc: 'Verify registration and explore the platform for 60 seconds.',
       points: 2000,
       rewardValue: '₹20.00 Value',
-      desc: 'Complete digital Aadhaar KYC to activate your free demat account.',
-      url: smartlinkUrl,
-      seconds: 60
-    },
-    {
-      id: 'vcomm_aubank_cc',
-      title: 'AU Small Finance Bank Lifetime Free Credit Card',
-      category: 'Credit Cards',
-      points: 3500,
-      rewardValue: '₹35.00 Value',
-      desc: 'Check instant eligibility for a lifetime free reward credit card.',
-      url: smartlinkUrl,
-      seconds: 60
-    },
-    {
-      id: 'vcomm_indusind',
-      title: 'IndusInd Bank Instant Digital Account',
-      category: 'Banking',
-      points: 1800,
-      rewardValue: '₹18.00 Value',
-      desc: 'Instant zero-balance savings account with complimentary virtual debit card.',
-      url: smartlinkUrl,
-      seconds: 60
-    },
-    {
-      id: 'vcomm_bajaj_finserv',
-      title: 'Bajaj Finserv Insta EMI Card Eligibility Check',
-      category: 'Credit & Loans',
-      points: 1500,
-      rewardValue: '₹15.00 Value',
-      desc: 'Apply online and activate an instant credit limit of up to ₹2,00,000.',
-      url: smartlinkUrl,
+      url: 'https://vcommission.com/aff_c?offer_id=xcelview_cpr',
       seconds: 60
     }
   ];
@@ -94,7 +69,7 @@ export default function TasksPage() {
     loadData();
   }, [router]);
 
-  // Anti-Cheat: 60s View & Tab Close Detection
+  // Anti-Cheat: 60-Second Window Monitor
   useEffect(() => {
     let timer;
     if (activeTask && secondsLeft > 0) {
@@ -102,7 +77,7 @@ export default function TasksPage() {
         if (adWindowRef.current && adWindowRef.current.closed) {
           setStatusMsg({
             type: 'error',
-            text: 'Offer tab was closed early! You must view the page for full 60 seconds. Task cancelled.'
+            text: 'Offer tab was closed before completion. 60 seconds view time is mandatory. Task cancelled.'
           });
           setActiveTask(null);
           setSecondsLeft(0);
@@ -119,7 +94,7 @@ export default function TasksPage() {
     const win = window.open(task.url, '_blank', 'noopener=false');
     adWindowRef.current = win;
     setActiveTask(task);
-    setSecondsLeft(task.seconds || 60);
+    setSecondsLeft(task.seconds);
   };
 
   const handleClaimPoints = async () => {
@@ -140,13 +115,13 @@ export default function TasksPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Task claim failed');
+        throw new Error(data.message || 'Points claim failed');
       }
 
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: `+${activeTask.points} Points credited directly to PostgreSQL database!`
+        text: `+${activeTask.points} Points credited directly to your database balance!`
       });
       setActiveTask(null);
 
@@ -168,18 +143,18 @@ export default function TasksPage() {
     );
   }
 
-  const tasksToDisplay = activeTab === 'daily_ads' ? dailyAdTasks : vCommissionOffers;
+  const tasksToDisplay = activeTab === 'daily_ads' ? dailyAds : vCommissionCampaigns;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-28 px-4 pt-4">
+    <div className="max-w-2xl mx-auto space-y-6 pb-28 px-4 pt-4 text-white">
       <Head>
-        <title>Tasks & Offers | RewardRush</title>
+        <title>Tasks & Campaigns | RewardRush</title>
       </Head>
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white">Daily Tasks & Offers</h1>
-          <p className="text-xs text-[#94A3B8]">Complete tasks to claim the ₹49 Unlimited Data Pack (4,900 pts)</p>
+          <h1 className="text-2xl font-black">Earn Rewards Hub</h1>
+          <p className="text-xs text-[#94A3B8]">Target: 4,900 Points = ₹49 Unlimited Data Pack</p>
         </div>
         <div className="px-3 py-1.5 bg-[#1E1B4B] border border-[#6366F1]/30 rounded-xl text-right">
           <span className="text-[10px] text-[#94A3B8] block">Live Balance</span>
@@ -188,42 +163,43 @@ export default function TasksPage() {
       </div>
 
       {statusMsg && (
-        <div className={`p-4 rounded-xl text-xs text-center border font-medium ${
+        <div className={`p-4 rounded-xl text-xs font-medium border flex items-center gap-2 ${
           statusMsg.type === 'success'
             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
             : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
         }`}>
-          {statusMsg.text}
+          {statusMsg.type === 'success' ? <CheckCircle size={16} className="shrink-0" /> : <Clock size={16} className="shrink-0" />}
+          <span>{statusMsg.text}</span>
         </div>
       )}
 
       {/* DUAL CHANNEL NAVIGATION */}
-      <div className="grid grid-cols-2 gap-2 p-1.5 bg-[#101522] border border-[#252C3D] rounded-2xl">
+      <div className="grid grid-cols-2 gap-2 p-1 bg-[#101522] border border-[#252C3D] rounded-2xl">
         <button
           onClick={() => setActiveTab('daily_ads')}
-          className={`py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+          className={`py-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
             activeTab === 'daily_ads'
               ? 'bg-[#6366F1] text-white shadow-md'
               : 'text-[#94A3B8] hover:text-white'
           }`}
         >
-          <Zap size={14} /> 130 Daily Ads (38 pts each)
+          <Zap size={14} /> 130 Daily Ads (Monetag & Adsterra)
         </button>
         <button
           onClick={() => setActiveTab('vcomm')}
-          className={`py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
+          className={`py-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
             activeTab === 'vcomm'
               ? 'bg-amber-500 text-black shadow-md'
               : 'text-[#94A3B8] hover:text-white'
           }`}
         >
-          <Flame size={14} /> vCommission Campaigns
+          <Flame size={14} /> vCommission (Fibe & Xcelview)
         </button>
       </div>
 
       {/* ACTIVE 60s RUNNING TASK BANNER */}
       {activeTask && (
-        <div className="p-5 bg-gradient-to-r from-[#1E1B4B] to-[#101522] border-2 border-[#6366F1] rounded-2xl space-y-3 shadow-xl">
+        <div className="p-5 bg-gradient-to-r from-[#1E1B4B] to-[#101522] border-2 border-[#6366F1] rounded-2xl space-y-3 shadow-2xl">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white flex items-center gap-2">
               <Clock size={16} className="text-[#818CF8] animate-spin" /> {activeTask.title}
@@ -233,9 +209,9 @@ export default function TasksPage() {
 
           <p className="text-xs text-[#94A3B8]">
             {secondsLeft > 0 ? (
-              <span>Keep offer tab open: <strong className="text-amber-400 text-sm">{secondsLeft}s</strong> remaining</span>
+              <span>Keep sponsor window open: <strong className="text-amber-400 text-sm">{secondsLeft}s</strong> remaining</span>
             ) : (
-              <span className="text-emerald-400 font-bold">60 seconds finished! Claim your points below.</span>
+              <span className="text-emerald-400 font-bold">60 seconds completed! You can now claim your reward.</span>
             )}
           </p>
 
@@ -248,16 +224,16 @@ export default function TasksPage() {
                 : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg'
             }`}
           >
-            <CheckCircle size={15} /> {claiming ? 'Updating Database...' : `Claim ${activeTask.points} Points`}
+            <CheckCircle size={15} /> {claiming ? 'Saving to Database...' : `Claim ${activeTask.points} Points`}
           </button>
         </div>
       )}
 
-      {/* TASK LIST */}
+      {/* TASK LIST DISPLAY */}
       <div className="space-y-3">
         <div className="flex items-center justify-between text-xs text-[#94A3B8]">
           <span className="uppercase font-bold tracking-wider">
-            {activeTab === 'daily_ads' ? 'Daily Adsterra Tasks Pool (130 Max)' : 'High-Ticket vCommission Offers'}
+            {activeTab === 'daily_ads' ? 'Daily 130 Ads Pool (38 pts each)' : 'High-Ticket Financial Campaigns'}
           </span>
           <span>{tasksToDisplay.length} Available</span>
         </div>
@@ -265,7 +241,7 @@ export default function TasksPage() {
         {tasksToDisplay.map((t) => (
           <div
             key={t.id}
-            className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-2xl flex items-center justify-between transition"
+            className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-2xl flex items-center justify-between transition shadow-sm"
           >
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -275,17 +251,11 @@ export default function TasksPage() {
                     {t.badge}
                   </span>
                 )}
-                {t.category && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
-                    {t.category}
-                  </span>
-                )}
               </div>
-              {t.desc && <p className="text-xs text-[#94A3B8]">{t.desc}</p>}
+              <p className="text-[11px] text-[#94A3B8]">{t.desc || `${t.provider} • 60-second view time required`}</p>
               <div className="flex items-center gap-2 pt-0.5">
                 <span className="text-xs font-bold text-emerald-400">+{t.points} Points</span>
                 {t.rewardValue && <span className="text-[10px] text-amber-400 font-semibold">({t.rewardValue})</span>}
-                <span className="text-[10px] text-[#94A3B8]">• 60s View Required</span>
               </div>
             </div>
 
