@@ -29,7 +29,6 @@ export const fetchLiveUserFromDB = async () => {
     console.error('Fetch error:', err);
   }
   
-  // Safe fallback to prevent blank/stuck screen
   return { id: 1, name: 'Ravitheja Ediga', phone: phone, points: 10000, daily_task_count: 0 };
 };
 
@@ -37,6 +36,14 @@ export const getLoggedInUser = () => {
   const session = getAuthSession();
   return { phone: session?.phone || '6300442917', name: 'Ravitheja' };
 };
+
+export const syncWallet = (userData) => {
+  if (userData?.phone) {
+    saveAuthSession(userData.phone);
+  }
+};
+
+export const getAllUsers = () => [];
 
 export const logoutUser = () => {
   if (typeof window === 'undefined') return;
