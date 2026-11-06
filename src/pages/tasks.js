@@ -14,44 +14,34 @@ export default function TasksPage() {
   const [claimMsg, setClaimMsg] = useState('');
   const [taskStartTime, setTaskStartTime] = useState(null);
 
-  // 1. Mana 2 Live High-CPM Ad Streams
-  const adTasks = [
-    {
-      id: 'ad_stream_1',
-      title: 'Telecom Ad Stream #1',
-      desc: 'Watch sponsor video stream for 15 seconds',
-      points: 40,
-      duration: 15,
-      url: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30'
-    },
-    {
-      id: 'ad_stream_2',
-      title: 'Telecom Ad Stream #2',
-      desc: 'Watch sponsor video stream for 15 seconds',
-      points: 40,
-      duration: 15,
-      url: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30'
-    }
-  ];
+  // High-CPM Ad Link (130 tasks = 5,200 points total, daily ₹49 data pack guaranteed)
+  const LIVE_AD_URL = 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30';
 
-  // 2. vCommission Testing Kosam Select Chesina 2 Partner Campaigns
+  const dailyAdsList = Array.from({ length: 130 }, (_, index) => ({
+    id: `ad_task_${index + 1}`,
+    number: index + 1,
+    title: `Sponsor Ad Stream #${index + 1}`,
+    points: 40,
+    duration: 15,
+    url: LIVE_AD_URL
+  }));
+
+  // Selected 2 High-Reward vCommission Campaigns
   const partnerTasks = [
     {
       id: 'vcomm_13145',
-      campaignId: '13145',
-      title: 'Fibe.in Quick Eligibility Check',
-      desc: 'Fill basic salary details to verify instant eligibility (High Payout)',
+      title: 'Fibe Quick Eligibility Check',
+      desc: 'Fill basic salary/employment details form',
       points: 2500,
-      badge: 'CPL - ₹315 Payout',
+      badge: 'CPL - High Reward',
       url: 'https://network.vcommission.com/click'
     },
     {
       id: 'vcomm_12592',
-      campaignId: '12592',
       title: 'Xcelviewpoint Survey Profile Sign-up',
       desc: 'Complete simple survey registration to qualify',
       points: 1200,
-      badge: 'CPR - ₹30 Payout',
+      badge: 'CPR - Instant Sign-up',
       url: 'https://network.vcommission.com/click'
     }
   ];
@@ -65,7 +55,6 @@ export default function TasksPage() {
     }
   }, [router]);
 
-  // Timer Countdown Logic for Ad Tasks
   useEffect(() => {
     if (!activeTask) return;
 
@@ -99,9 +88,9 @@ export default function TasksPage() {
     setLoading(false);
   };
 
-  const startAdTask = (task) => {
+  const startDailyAdTask = (task) => {
     if ((currentUser.daily_task_count || 0) >= 130) {
-      setClaimMsg('❌ Daily limit reached for today! Reset at midnight.');
+      setClaimMsg('❌ Daily limit (130/130 ads) completed for today! Mid-night reset avthundi.');
       return;
     }
     setTaskStartTime(Date.now());
@@ -127,12 +116,12 @@ export default function TasksPage() {
       if (res.success) {
         syncWallet(res.user);
         setCurrentUser(res.user);
-        setClaimMsg(`🎉 +${activeTask.points} Points credited to wallet!`);
+        setClaimMsg(`🎉 +${activeTask.points} Points Credited to Wallet!`);
       } else {
         setClaimMsg(`❌ ${res.message}`);
       }
     } catch (err) {
-      setClaimMsg('❌ Verification issue. Please try again.');
+      setClaimMsg('❌ Verification issue. Try again.');
     }
 
     setActiveTask(null);
@@ -143,18 +132,18 @@ export default function TasksPage() {
     if (!currentUser) return;
     const finalTrackingUrl = `${task.url}?aff_id=133655&sub1=${currentUser.id}&aff_sub=${currentUser.id}`;
     window.open(finalTrackingUrl, '_blank');
-    setClaimMsg(`🚀 '${task.title}' open ayindi! Verification tarvatha wallet lo points auto-credit avthayi.`);
+    setClaimMsg(`🚀 '${task.title}' open ayindi! Complete ayyaka points wallet lo credit avthayi.`);
   };
 
   if (!currentUser) return null;
 
   return (
-    <div className="space-y-6 max-w-xl mx-auto pb-24">
+    <div className="space-y-6 max-w-2xl mx-auto pb-24">
       <Head>
         <title>Tasks & Earnings | RewardRush</title>
       </Head>
 
-      {/* Daily Bonus Banner */}
+      {/* Daily Streak Card */}
       <div className="p-5 bg-gradient-to-r from-[#101522] via-[#1E1B4B] to-[#101522] border border-[#6366F1]/30 rounded-2xl flex items-center justify-between shadow-lg">
         <div>
           <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
@@ -177,7 +166,7 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* Active Ad Countdown Card */}
+      {/* 15s Timer Notification */}
       {activeTask && (
         <div className="p-4 bg-[#1E1B4B] border-2 border-[#818CF8] rounded-2xl flex items-center justify-between shadow-2xl animate-pulse">
           <div className="flex items-center gap-3">
@@ -194,48 +183,16 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* SECTION 1: MANA 2 AD STREAM TASKS */}
+      {/* SECTION 1: 2 VCOMMISSION HIGH REWARD OFFERS */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8] flex items-center gap-1.5">
-            <Sparkles size={14} className="text-[#818CF8]" /> Daily Ad Streams (Instant Verification)
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+            High-Reward Partner Tasks (vCommission)
           </h3>
-          <span className="text-xs font-bold text-[#34D399]">Wallet: {currentUser.points || 0} pts</span>
+          <span className="text-xs font-bold text-[#34D399]">
+            Balance: {currentUser.points || 0} pts
+          </span>
         </div>
-
-        <div className="space-y-2.5">
-          {adTasks.map((task) => (
-            <div 
-              key={task.id}
-              className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-xl flex items-center justify-between transition"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white">{task.title}</span>
-                  <span className="text-[10px] bg-[#6366F1]/20 text-[#818CF8] px-2 py-0.5 rounded font-mono">
-                    15s Stream
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#94A3B8]">{task.desc}</p>
-              </div>
-
-              <button
-                onClick={() => startAdTask(task)}
-                disabled={!!activeTask || loading || (currentUser.daily_task_count || 0) >= 130}
-                className="px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] disabled:opacity-40 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow shrink-0"
-              >
-                <Play size={12} fill="white" /> Start <span className="text-[#34D399]">+{task.points}</span>
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* SECTION 2: vCOMMISSION 2 APPROVED OFFERS */}
-      <div className="space-y-3 pt-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
-          High Reward Partner Campaigns (vCommission)
-        </h3>
 
         <div className="space-y-2.5">
           {partnerTasks.map((task) => (
@@ -257,10 +214,61 @@ export default function TasksPage() {
                 onClick={() => startPartnerTask(task)}
                 className="shrink-0 px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow"
               >
-                Claim <span className="text-[#34D399]">+{task.points}</span> <ExternalLink size={12} />
+                Claim <span className="text-[#34D399]">+{task.points} pts</span> <ExternalLink size={12} />
               </button>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* SECTION 2: 130 DAILY AD STREAMS (TOTAL 5,200 POINTS) */}
+      <div className="space-y-3 pt-4 border-t border-[#252C3D]">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8] flex items-center gap-1.5">
+            <Sparkles size={14} className="text-[#818CF8]" /> Daily Ad Streams ({currentUser.daily_task_count || 0}/130 Completed)
+          </h3>
+          <span className="text-xs font-bold text-[#818CF8]">
+            Goal: 4,900 pts (₹49 Data Pack)
+          </span>
+        </div>
+
+        <div className="space-y-2.5">
+          {dailyAdsList.map((task, idx) => {
+            const isCompleted = idx < (currentUser.daily_task_count || 0);
+
+            return (
+              <div 
+                key={task.id}
+                className={`p-4 bg-[#101522] border rounded-xl flex items-center justify-between transition ${
+                  isCompleted ? 'border-[#1C2231] opacity-50' : 'border-[#252C3D] hover:border-[#6366F1]/50'
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white">{task.title}</span>
+                    <span className="text-[10px] bg-[#6366F1]/20 text-[#818CF8] px-2 py-0.5 rounded font-mono">
+                      15s View
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#94A3B8]">View sponsor ad for 15 seconds to credit +40 points</p>
+                </div>
+
+                {isCompleted ? (
+                  <span className="text-xs font-bold text-[#34D399] flex items-center gap-1 shrink-0">
+                    <CheckCircle2 size={16} /> Done
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => startDailyAdTask(task)}
+                    disabled={!!activeTask || loading || (currentUser.daily_task_count || 0) >= 130}
+                    className="px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] disabled:opacity-40 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow shrink-0"
+                  >
+                    <Play size={12} fill="white" /> Start <span className="text-[#34D399]">+{task.points}</span>
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
