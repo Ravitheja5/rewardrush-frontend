@@ -16,6 +16,7 @@ export default function RewardsPage() {
   const loadUserData = async () => {
     setLoading(true);
     const liveUser = await fetchLiveUserFromDB();
+    if (!liveUser) {
       router.push('/auth');
       return;
     }
@@ -26,6 +27,7 @@ export default function RewardsPage() {
 
   useEffect(() => {
     const session = getAuthSession();
+    if (!session) {
       router.push('/auth');
       return;
     }
@@ -36,7 +38,7 @@ export default function RewardsPage() {
     setStatusMsg(null);
     const sanitized = String(mobileNumber || '').trim().replace(/\D/g, '').slice(-10);
 
-    if (sanitized.length !== 10 || @type[6-9]\d{9}$/.test(sanitized)) {
+    if (sanitized.length !== 10 || !/^[6-9]\d{9}$/.test(sanitized)) {
       setStatusMsg({
         type: 'error',
         text: 'Please enter a valid 10-digit Indian mobile number.'
@@ -44,6 +46,7 @@ export default function RewardsPage() {
       return;
     }
 
+    if (!user || user.points < 4900) {
       setStatusMsg({
         type: 'error',
         text: 'Insufficient points balance. You need at least 4,900 points.'
@@ -66,13 +69,14 @@ export default function RewardsPage() {
       });
 
       const data = await res.json();
+      if (!res.ok || !data.success) {
         throw new Error(data.message || 'Redemption request failed.');
       }
 
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: 'Recharge order placed successfully! Order ID: #' + (data.redemption?.id || data.orderId || 'REQ-LIVE') + '. Status: PENDING Admin Approval.'
+        text: `Recharge order placed successfully! Order ID: #${data.redemption?.id || data.orderId || 'REQ-LIVE'}. Status: PENDING Admin Approval.`
       });
     } catch (err) {
       setStatusMsg({ type: 'error', text: err.message });
@@ -81,6 +85,7 @@ export default function RewardsPage() {
     }
   };
 
+  if (loading && !user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-white">
         <RefreshCw className="animate-spin text-[#6366F1] mb-2" size={32} />
@@ -89,6 +94,7 @@ export default function RewardsPage() {
     );
   }
 
+  if (!user) return null;
 
   return (
     <div className="max-w-xl mx-auto space-y-6 pb-28 px-4 pt-4 text-white">
@@ -104,11 +110,11 @@ export default function RewardsPage() {
       </div>
 
       {statusMsg && (
-        <div className={'p-4 rounded-xl text-xs font-medium border flex items-center gap-2 ' + (
+        <div className={`p-4 rounded-xl text-xs font-medium border flex items-center gap-2 ${
           statusMsg.type === 'success'
             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
             : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-        )}>
+        }`}>
           {statusMsg.type === 'success' ? <CheckCircle2 size={16} className="shrink-0" /> : <AlertCircle size={16} className="shrink-0" />}
           <span>{statusMsg.text}</span>
         </div>
@@ -141,11 +147,11 @@ export default function RewardsPage() {
                   key={op}
                   type="button"
                   onClick={() => setOperator(op)}
-                  className={'py-2.5 text-xs font-bold rounded-xl border transition ' + (
+                  className={`py-2.5 text-xs font-bold rounded-xl border transition ${
                     operator === op
                       ? 'bg-[#6366F1] border-[#6366F1] text-white shadow-md'
                       : 'bg-[#0B0F17] border-[#252C3D] text-[#94A3B8] hover:border-gray-600'
-                  )}
+                  }`}
                 >
                   {op}
                 </button>
@@ -170,11 +176,11 @@ export default function RewardsPage() {
           <button
             onClick={handleRedeem}
             disabled={redeeming || user.points < 4900}
-            className={'w-full py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ' + (
+            className={`w-full py-3.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 ${
               user.points < 4900
                 ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'
                 : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
-            )}
+            }`}
           >
             {redeeming ? 'Processing in Database...' : 'Redeem Now (4,900 Pts)'}
           </button>
