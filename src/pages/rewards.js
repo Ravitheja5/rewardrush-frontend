@@ -2,147 +2,163 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getLoggedInUser, syncWallet } from '../utils/auth';
-import { apiRequest } from '../utils/api';
-import { Zap, CheckCircle2, AlertCircle, Clock, ShieldCheck } from 'lucide-react';
+import { Smartphone, Zap, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function RewardsPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState(null);
-  const [phone, setPhone] = useState('');
-  const [operator, setOperator] = useState('JIO');
+  const [user, setUser] = useState(null);
+  const [targetPhone, setTargetPhone] = useState('');
+  const [operator, setOperator] = useState('Jio');
   const [loading, setLoading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState('');
+  const [status, setStatus] = useState(null);
 
   useEffect(() => {
-    const user = getLoggedInUser();
-    if (!user) {
+    const u = getLoggedInUser();
+    if (!u) {
       router.push('/auth');
-    } else {
-      setCurrentUser(user);
-      setPhone(user.phone || '');
+      return;
     }
+    setUser(u);
+    setTargetPhone(u.phone || '');
   }, [router]);
 
-  const handleRecharge = async (e) => {
+  const handleRedeem = async (e) => {
     e.preventDefault();
-    if (!currentUser) return;
+    setStatus(null);
 
-    if (!/^[6-9]\d{9}$/.test(phone)) {
-      setStatusMsg('❌ Please enter a valid 10-digit mobile number');
+    if (!/^[6-9]\d{9}$/.test(targetPhone)) {
+      setStatus({ type: 'error', text: 'Dayachesi valid 10-digit mobile number ivvandi (6, 7, 8, 9 tho start avvali).' });
       return;
     }
 
-    if ((currentUser.points || 0) < 4900) {
-      setStatusMsg('❌ Insufficient balance! 4,900 points required for ₹49 Data Pack.');
+    if (!operator) {
+      setStatus({ type: 'error', text: 'Dayachesi telecom operator select cheyandi.' });
+      return;
+    }
+
+    if ((user.points || 0) < 4900) {
+      setStatus({ type: 'error', text: '₹49 Recharge kosam minimum 4,900 points undali.' });
       return;
     }
 
     setLoading(true);
-    setStatusMsg('');
-
     try {
-      const res = await apiRequest('/api/store/recharge', 'POST', {
-        userId: currentUser.id,
-        phone,
-        operator
+      const backendUrl = 'https://rewards-app-backend-lq2v.onrender.com';
+      const res = await fetch(`${backendUrl}/api/rewards/redeem`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: user.phone,
+          targetPhone,
+          operator,
+          planAmount: 49,
+          pointsRequired: 4900
+        })
       });
 
-      if (res.success) {
-        const updatedPoints = (currentUser.points || 0) - 4900;
-        const updatedUser = { ...currentUser, points: updatedPoints };
-        syncWallet(updatedUser);
-        setCurrentUser(updatedUser);
-        setStatusMsg('✅ Recharge request submitted! Manual operator verification completes in 2-6 hours.');
-      } else {
-        setStatusMsg(`❌ ${res.message}`);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Redemption failed');
       }
-    } catch (err) {
-      setStatusMsg('❌ Server connectivity issue. Please try again.');
-    }
 
-    setLoading(false);
+      syncWallet(data.user);
+      setUser(data.user);
+      setStatus({ type: 'success', text: data.message });
+    } catch (err) {
+      setStatus({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (!currentUser) return null;
+  if (!user) return null;
 
   return (
-    <div className="space-y-6 max-w-xl mx-auto pb-24">
+    <div className="max-w-md mx-auto space-y-6 pb-24">
       <Head>
-        <title>Rewards Store | RewardRush</title>
+        <title>Claim Rewards | RewardRush</title>
       </Head>
 
-      {/* Balance Overview */}
-      <div className="p-6 bg-gradient-to-br from-[#101522] via-[#1E1B4B] to-[#101522] border border-[#6366F1]/30 rounded-2xl flex items-center justify-between shadow-lg">
+      <div className="space-y-1">
+        <h1 className="text-xl sm:text-2xl font-black text-white">Redeem Instant Recharge</h1>
+        <p className="text-xs text-[#94A3B8]">Exchange your hard-earned points for 1-Day Unlimited Data Packs.</p>
+      </div>
+
+      <div className="p-5 bg-gradient-to-br from-[#101522] to-[#1E1B4B] border border-[#6366F1]/30 rounded-2xl flex items-center justify-between">
         <div>
-          <span className="text-xs uppercase tracking-wider text-[#94A3B8]">Current Balance</span>
-          <h2 className="text-2xl font-black text-white mt-1">{currentUser.points || 0} pts</h2>
+          <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">Available Balance</span>
+          <h3 className="text-2xl font-black text-white">{user.points || 0} <span className="text-xs text-[#818CF8]">pts</span></h3>
         </div>
-        <div className="text-right">
-          <span className="text-xs font-semibold text-[#818CF8]">Goal Status</span>
-          <p className="text-xs font-bold text-[#34D399] mt-1">
-            {currentUser.points >= 4900 ? 'Eligible for ₹49 Pack' : `${4900 - (currentUser.points || 0)} pts needed`}
-          </p>
+        <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg">
+          ₹{((user.points || 0) / 100).toFixed(2)}
         </div>
       </div>
 
-      {/* Notice Banner */}
-      <div className="p-4 bg-[#101522] border border-[#252C3D] rounded-xl flex items-center gap-3">
-        <Clock className="text-[#818CF8] shrink-0" size={20} />
-        <p className="text-xs text-[#94A3B8]">
-          <strong className="text-white">Manual Verification SLA:</strong> All telecom data pack recharges are manually verified and processed within 2 to 6 hours.
-        </p>
-      </div>
-
-      {/* Redemption Form */}
-      <div className="p-6 bg-[#101522] border border-[#252C3D] rounded-2xl space-y-4">
-        <div className="flex items-center gap-2 border-b border-[#252C3D] pb-3">
-          <Zap className="text-amber-400" size={18} />
-          <h3 className="text-sm font-bold text-white">Redeem ₹49 Telecom Data Pack</h3>
+      {status && (
+        <div className={`p-4 rounded-2xl text-xs flex items-center gap-2 border ${
+          status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+        }`}>
+          {status.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          <span>{status.text}</span>
         </div>
+      )}
 
-        {statusMsg && (
-          <div className={`p-3 text-xs text-center rounded-xl font-medium ${statusMsg.includes('❌') ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
-            {statusMsg}
-          </div>
-        )}
-
-        <form onSubmit={handleRecharge} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-[#94A3B8] mb-1.5">Mobile Number</label>
+      <form onSubmit={handleRedeem} className="p-6 bg-[#101522] border border-[#252C3D] rounded-3xl space-y-4">
+        <div>
+          <label className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider block mb-1">Recharge Mobile Number</label>
+          <div className="relative">
+            <Smartphone size={16} className="absolute left-3.5 top-3.5 text-[#94A3B8]" />
             <input
               type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              maxLength={10}
-              placeholder="Enter 10-digit mobile number"
-              className="w-full bg-[#0B0F17] border border-[#252C3D] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#6366F1]"
               required
+              maxLength={10}
+              value={targetPhone}
+              onChange={(e) => setTargetPhone(e.target.value.replace(/\D/g, ''))}
+              placeholder="10-digit number"
+              className="w-full bg-[#0B0F17] border border-[#252C3D] rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#6366F1]"
             />
           </div>
+        </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-[#94A3B8] mb-1.5">Operator</label>
-            <select
-              value={operator}
-              onChange={(e) => setOperator(e.target.value)}
-              className="w-full bg-[#0B0F17] border border-[#252C3D] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#6366F1]"
-            >
-              <option value="JIO">Jio</option>
-              <option value="AIRTEL">Airtel</option>
-              <option value="VI">Vodafone Idea (Vi)</option>
-              <option value="BSNL">BSNL</option>
-            </select>
+        <div>
+          <label className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider block mb-1">Select Operator</label>
+          <div className="grid grid-cols-4 gap-2">
+            {['Jio', 'Airtel', 'Vi', 'BSNL'].map((op) => (
+              <button
+                type="button"
+                key={op}
+                onClick={() => setOperator(op)}
+                className={`py-2 text-xs font-bold rounded-xl border transition ${
+                  operator === op
+                    ? 'bg-[#6366F1] border-[#6366F1] text-white shadow-md'
+                    : 'bg-[#0B0F17] border-[#252C3D] text-[#94A3B8] hover:border-gray-600'
+                }`}
+              >
+                {op}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading || (currentUser.points || 0) < 4900}
-            className="w-full py-3 bg-[#6366F1] hover:bg-[#4F46E5] disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-lg transition"
-          >
-            {loading ? 'Submitting...' : 'Claim ₹49 Data Pack (4,900 pts)'}
-          </button>
-        </form>
-      </div>
+        <div className="p-3 bg-[#0B0F17] border border-[#252C3D] rounded-xl flex items-center justify-between text-xs">
+          <span className="text-white font-bold flex items-center gap-1.5">
+            <Zap size={14} className="text-amber-400" /> ₹49 Unlimited Data Pack
+          </span>
+          <span className="text-[#818CF8] font-bold">4,900 pts</span>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading || (user.points || 0) < 4900}
+          className={`w-full py-3 text-xs font-bold rounded-xl transition shadow-lg ${
+            (user.points || 0) >= 4900
+              ? 'bg-[#6366F1] hover:bg-[#4F46E5] text-white'
+              : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+          }`}
+        >
+          {loading ? 'Processing Recharge...' : 'Confirm & Claim ₹49 Pack'}
+        </button>
+      </form>
     </div>
   );
 }
