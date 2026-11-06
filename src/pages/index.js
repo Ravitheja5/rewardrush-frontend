@@ -3,98 +3,100 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { getLoggedInUser } from '../utils/auth';
-import { Zap, CheckCircle2, ArrowRight, ShieldCheck, Flame } from 'lucide-react';
+import { Zap, ArrowRight, ShieldCheck, Flame, Gift } from 'lucide-react';
 
-export default function HomePage() {
+export default function DashboardHome() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const sessionUser = getLoggedInUser();
-    setUser(sessionUser);
-  }, []);
+    const user = getLoggedInUser();
+    if (!user) {
+      router.push('/auth');
+    } else {
+      setCurrentUser(user);
+    }
+  }, [router]);
 
-  const points = user ? user.points : 0;
-  const rupees = (points / 100).toFixed(2);
-  const rechargeProgress = Math.min(100, ((points / 4900) * 100)).toFixed(1);
+  if (!currentUser) return null;
+
+  const points = currentUser.points || 0;
+  const progressPercent = Math.min(100, ((points / 4900) * 100).toFixed(1));
+
+  // Phone number kakunda user pettina peru chupinchadam
+  const displayName = currentUser.name || 'Member';
 
   return (
-    <div className="space-y-6 pb-12 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-2xl mx-auto pb-24">
       <Head>
-        <title>RewardRush - Fintech Rewards Ecosystem</title>
+        <title>Dashboard | RewardRush</title>
       </Head>
 
-      {/* Greeting & Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#F8FAFC]">
-          {user ? `Welcome back, +91 ${user.phone} 👋` : 'Welcome to RewardRush 👋'}
+      {/* Greeting Header */}
+      <div className="space-y-1">
+        <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+          Welcome back, {displayName} 👋
         </h1>
-        <p className="text-xs text-[#727C91] mt-0.5">
-          {user ? 'Your real-time earnings and redemption progress' : 'Login to earn free unlimited 1-day high speed data packs'}
+        <p className="text-xs text-[#94A3B8]">
+          Your real-time earnings and redemption progress
         </p>
       </div>
 
-      {/* Available Balance Card */}
-      <div className="p-6 bg-[#101522] border border-[#252C3D] rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <span className="text-[11px] font-semibold text-[#818CF8] tracking-wider uppercase">
-            Available Live Balance
-          </span>
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold text-[#F8FAFC] tracking-tight">
-              {points.toLocaleString()}
+      {/* Main Balance Card */}
+      <div className="p-6 bg-gradient-to-br from-[#101522] via-[#1E1B4B] to-[#101522] border border-[#6366F1]/30 rounded-2xl space-y-4 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-[11px] uppercase tracking-wider text-[#94A3B8] font-bold">
+              Available Live Balance
             </span>
-            <span className="text-sm font-semibold text-[#727C91]">pts</span>
-            <span className="text-sm font-bold text-[#34D399] ml-2">≈ ₹{rupees}</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <h2 className="text-3xl font-black text-white">{points} <span className="text-sm font-normal text-[#818CF8]">pts</span></h2>
+              <span className="text-xs font-bold text-[#34D399]">≈ ₹{(points / 100).toFixed(2)}</span>
+            </div>
           </div>
-          <p className="text-[11px] text-[#727C91]">
-            Daily tasks completed: <strong className="text-[#F8FAFC]">{user ? user.daily_task_count : 0}/12</strong>
-          </p>
+
+          <div className="flex gap-2">
+            <Link
+              href="/rewards"
+              className="px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white text-xs font-bold rounded-xl shadow transition"
+            >
+              Redeem Rewards →
+            </Link>
+            <Link
+              href="/tasks"
+              className="px-4 py-2 bg-[#252C3D] hover:bg-[#2D3748] text-white text-xs font-bold rounded-xl transition"
+            >
+              Earn More
+            </Link>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {user ? (
-            <>
-              <Link
-                href="/store"
-                className="px-5 py-2.5 bg-[#818CF8] hover:bg-[#6366F1] text-white text-xs font-semibold rounded-xl transition shadow-lg shadow-[#818CF8]/20 flex items-center gap-1.5"
-              >
-                Redeem Rewards <ArrowRight size={14} />
-              </Link>
-              <Link
-                href="/tasks"
-                className="px-5 py-2.5 bg-[#151D30] hover:bg-[#1C253C] border border-[#252C3D] text-[#F8FAFC] text-xs font-semibold rounded-xl transition"
-              >
-                Earn More
-              </Link>
-            </>
-          ) : (
-            <Link
-              href="/auth"
-              className="px-6 py-2.5 bg-[#818CF8] hover:bg-[#6366F1] text-white text-xs font-semibold rounded-xl transition shadow-lg shadow-[#818CF8]/20"
-            >
-              Login / Register Now
-            </Link>
-          )}
+        <div className="text-[11px] text-[#94A3B8] pt-2 border-t border-[#252C3D]/60 flex items-center justify-between">
+          <span>Daily tasks completed: <strong className="text-white">{currentUser.daily_task_count || 0}/130</strong></span>
+          <span className="text-[#34D399] font-medium">Daily reset at 00:00 IST</span>
         </div>
       </div>
 
-      {/* Goal Progress Card */}
+      {/* Goal Progress Bar */}
       <div className="p-5 bg-[#101522] border border-[#252C3D] rounded-2xl space-y-3">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-semibold text-[#F8FAFC] flex items-center gap-1.5">
-            <Zap size={14} className="text-[#818CF8]" /> ₹49 Data Recharge Goal
+          <span className="font-bold text-white flex items-center gap-1.5">
+            <Zap className="text-amber-400" size={14} /> ₹49 Data Recharge Goal
           </span>
-          <span className="font-bold text-[#818CF8]">{rechargeProgress}%</span>
+          <span className="font-bold text-[#818CF8]">{progressPercent}%</span>
         </div>
-        <div className="w-full bg-[#0B0E17] h-2.5 rounded-full overflow-hidden border border-[#1C2231]">
+
+        <div className="w-full bg-[#0B0F17] rounded-full h-2.5 overflow-hidden border border-[#252C3D]">
           <div
-            className="bg-gradient-to-r from-[#818CF8] to-[#34D399] h-full transition-all duration-500"
-            style={{ width: `${rechargeProgress}%` }}
+            className="bg-gradient-to-r from-[#6366F1] to-[#34D399] h-2.5 rounded-full transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <p className="text-[11px] text-[#727C91]">
-          Need 4,900 points to claim an instant 1-Day Unlimited Data Pack.
+
+        <p className="text-[11px] text-[#94A3B8]">
+          {points >= 4900 
+            ? '🎉 Target reached! Go to Rewards to claim your recharge.' 
+            : `Need ${4900 - points} points to claim an instant 1-Day Unlimited Data Pack.`}
         </p>
       </div>
     </div>
