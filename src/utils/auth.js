@@ -1,8 +1,12 @@
-// SESSION MANAGEMENT (Database is source-of-truth)
+// Pure session tracking without points in browser
 export const getAuthSession = () => {
   if (typeof window === 'undefined') return null;
-  const session = localStorage.getItem('rr_session');
-  return session ? JSON.parse(session) : null;
+  try {
+    const session = localStorage.getItem('rr_session');
+    return session ? JSON.parse(session) : null;
+  } catch (e) {
+    return null;
+  }
 };
 
 export const saveAuthSession = (phone) => {
@@ -10,15 +14,13 @@ export const saveAuthSession = (phone) => {
   localStorage.setItem('rr_session', JSON.stringify({ phone }));
 };
 
-// DIRECT DATABASE FETCH
 export const fetchLiveUserFromDB = async () => {
   const session = getAuthSession();
-  const phone = session?.phone || (typeof window !== 'undefined' ? localStorage.getItem('rr_phone') : null);
-  if (!phone) return null;
+  if (!session || !session.phone) return null;
 
   try {
     const backendUrl = 'https://rewards-app-backend-lq2v.onrender.com';
-    const res = await fetch(`${backendUrl}/api/user/me?phone=${phone}`, {
+    const res = await fetch(`${backendUrl}/api/user/me?phone=${session.phone}`, {
       cache: 'no-store',
       headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
     });
@@ -32,24 +34,19 @@ export const fetchLiveUserFromDB = async () => {
   return null;
 };
 
-// COMPATIBILITY HELPERS FOR OLD PAGES (profile, rewards, store, wallet)
 export const getLoggedInUser = () => {
-  if (typeof window === 'undefined') return null;
   const session = getAuthSession();
   if (!session || !session.phone) return null;
-  return { phone: session.phone, name: 'User' };
+  return { phone: session.phone };
 };
 
 export const syncWallet = (userData) => {
-  // Pure DB sync: Keep session reference alive
   if (userData && userData.phone) {
     saveAuthSession(userData.phone);
   }
 };
 
-export const getAllUsers = () => {
-  return [];
-};
+export const getAllUsers = () => [];
 
 export const logoutUser = () => {
   if (typeof window === 'undefined') return;
