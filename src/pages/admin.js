@@ -1,37 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
-import { Shield, RefreshCw, Check, X, AlertCircle } from 'lucide-react';
+import { apiRequest } from '../utils/api';
+import { ShieldCheck, CheckCircle2, Clock, Users, RefreshCw } from 'lucide-react';
 
-export default function AdminPage() {
+export default function AdminDashboard() {
   const [secret, setSecret] = useState('');
-  const [isAuth, setIsAuth] = useState(false);
-  const [recharges, setRecharges] = useState([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [data, setData] = useState([]);
+  const [stats, setStats] = useState({ total_users: 0, pending_recharges: 0, completed_recharges: 0 });
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [msg, setMsg] = useState('');
 
-  const loadRecharges = async (token) => {
+  const fetchAdminData = async (adminSecret) => {
     setLoading(true);
-    setErrorMsg('');
     try {
-      const res = await fetch('https://rewards-app-backend-lq2v.onrender.com/api/admin/recharges', {
-        headers: { 'admin-secret': token || secret }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rewards-app-backend-lq2v.onrender.com'}/api/admin/recharges`, {
+        headers: { 'admin-secret': adminSecret }
       });
-      const data = await res.json();
-      if (data.success) {
-        setRecharges(data.data);
-        setIsAuth(true);
+      const result = await res.json();
+      if (result.success) {
+        setIsAuthenticated(true);
+        setData(result.data || []);
+        if (result.stats) setStats(result.stats);
       } else {
-        setErrorMsg(data.message || 'Access Denied: Invalid Secret Key');
+        setMsg('❌ Invalid Admin Secret Key');
       }
     } catch (err) {
-      setErrorMsg('Failed to connect to backend server');
+      setMsg('❌ Error connecting to backend');
     }
     setLoading(false);
   };
 
-  const handleStatusChange = async (id, status) => {
+  const handleLogin = (e) => {
+    e.preventDefault();
+    fetchAdminData(secret);
+  };
+
+  const updateStatus = async (id, status) => {
     try {
-      await fetch('https://rewards-app-backend-lq2v.onrender.com/api/admin/recharge/status', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://rewards-app-backend-lq2v.onrender.com'}/api/admin/recharge/status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,105 +46,128 @@ export default function AdminPage() {
         },
         body: JSON.stringify({ id, status })
       });
-      loadRecharges(secret);
+      const result = await res.json();
+      if (result.success) {
+        fetchAdminData(secret);
+      }
     } catch (err) {
-      alert('Failed to update status');
+      alert('Status update failed');
     }
   };
 
-  if (!isAuth) {
+  if (!isAuthenticated) {
     return (
-      <div className="max-w-md mx-auto my-16 p-6 bg-[#101522] border border-[#252C3D] rounded-2xl space-y-4">
-        <Head>
-          <title>Admin Login | RewardRush</title>
-        </Head>
-        <div className="text-center space-y-1">
-          <Shield size={28} className="mx-auto text-[#818CF8]" />
-          <h2 className="text-lg font-bold text-white">Admin Control Center</h2>
-          <p className="text-xs text-[#94A3B8]">Enter secret access key</p>
-        </div>
-
-        {errorMsg && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400">
-            {errorMsg}
+      <div className="min-h-[70vh] flex items-center justify-center p-4">
+        <Head><title>Admin Access | RewardRush</title></Head>
+        <form onSubmit={handleLogin} className="max-w-sm w-full bg-[#101522] border border-[#252C3D] p-6 rounded-2xl space-y-4">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="text-[#818CF8]" size={20} />
+            <h2 className="text-sm font-bold text-white">RewardRush Admin</h2>
           </div>
-        )}
-
-        <input
-          type="password"
-          placeholder="Admin Secret Key"
-          value={secret}
-          onChange={(e) => setSecret(e.target.value)}
-          className="w-full px-3.5 py-2.5 bg-[#0B0E17] border border-[#252C3D] rounded-xl text-xs text-white focus:outline-none focus:border-[#818CF8]"
-        />
-
-        <button
-          onClick={() => loadRecharges(secret)}
-          disabled={loading}
-          className="w-full py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs rounded-xl transition"
-        >
-          {loading ? 'Authenticating...' : 'Access Recharges'}
-        </button>
+          {msg && <p className="text-xs text-red-400">{msg}</p>}
+          <input
+            type="password"
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            placeholder="Enter Admin Secret"
+            className="w-full bg-[#0B0F17] border border-[#252C3D] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#6366F1]"
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs rounded-xl shadow transition"
+          >
+            {loading ? 'Authenticating...' : 'Access Dashboard'}
+          </button>
+        </form>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-16">
-      <Head>
-        <title>Payouts Console | RewardRush Admin</title>
-      </Head>
+    <div className="space-y-6 max-w-4xl mx-auto pb-24">
+      <Head><title>Admin Panel | RewardRush</title></Head>
 
-      <div className="flex items-center justify-between border-b border-[#252C3D] pb-4">
-        <div>
-          <h1 className="text-xl font-bold text-white">Pending Data Pack Recharges</h1>
-          <p className="text-xs text-[#94A3B8]">Process user ₹49 claims</p>
-        </div>
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-bold text-white flex items-center gap-2">
+          <ShieldCheck className="text-[#818CF8]" size={20} /> Admin Redemption Console
+        </h2>
         <button
-          onClick={() => loadRecharges(secret)}
-          className="px-3 py-1.5 bg-[#1E293B] hover:bg-[#334155] text-white text-xs font-semibold rounded-lg flex items-center gap-1.5"
+          onClick={() => fetchAdminData(secret)}
+          className="p-2 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1] rounded-xl text-white text-xs flex items-center gap-1.5 transition"
         >
-          <RefreshCw size={14} /> Refresh
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
         </button>
       </div>
 
-      <div className="space-y-3">
-        {recharges.map((r) => (
-          <div key={r.id} className="p-4 bg-[#101522] border border-[#252C3D] rounded-xl flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white">+91 {r.phone}</span>
-                <span className="text-xs font-bold text-[#818CF8]">({r.operator})</span>
-                <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${r.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                  {r.status}
-                </span>
-              </div>
-              <p className="text-xs text-[#94A3B8]">
-                User: {r.user_name || 'Member'} | Account: +91 {r.account_phone} | Date: {new Date(r.requested_at).toLocaleString()}
-              </p>
-            </div>
+      {/* Metrics */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="p-4 bg-[#101522] border border-[#252C3D] rounded-xl">
+          <span className="text-[11px] text-[#94A3B8]">Total Registered Users</span>
+          <p className="text-xl font-black text-white mt-1">{stats.total_users || 0}</p>
+        </div>
+        <div className="p-4 bg-[#101522] border border-amber-500/20 rounded-xl">
+          <span className="text-[11px] text-amber-400">Pending Recharges</span>
+          <p className="text-xl font-black text-amber-400 mt-1">{stats.pending_recharges || 0}</p>
+        </div>
+        <div className="p-4 bg-[#101522] border border-emerald-500/20 rounded-xl">
+          <span className="text-[11px] text-emerald-400">Completed Recharges</span>
+          <p className="text-xl font-black text-emerald-400 mt-1">{stats.completed_recharges || 0}</p>
+        </div>
+      </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleStatusChange(r.id, 'Completed')}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg flex items-center gap-1"
-              >
-                <Check size={14} /> Recharged
-              </button>
-              <button
-                onClick={() => handleStatusChange(r.id, 'Rejected')}
-                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg flex items-center gap-1"
-              >
-                <X size={14} /> Reject
-              </button>
-            </div>
-          </div>
-        ))}
-        {recharges.length === 0 && (
-          <div className="text-center py-12 text-xs text-[#64748B]">
-            No recharge requests submitted yet.
-          </div>
-        )}
+      {/* Queue Table */}
+      <div className="bg-[#101522] border border-[#252C3D] rounded-2xl overflow-hidden">
+        <div className="p-4 border-b border-[#252C3D]">
+          <h3 className="text-xs font-bold text-white uppercase tracking-wider">Recharge Requests</h3>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-[#0B0F17] text-[#94A3B8] border-b border-[#252C3D]">
+              <tr>
+                <th className="p-3">User</th>
+                <th className="p-3">Target Mobile</th>
+                <th className="p-3">Operator</th>
+                <th className="p-3">Amount</th>
+                <th className="p-3">Status</th>
+                <th className="p-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#252C3D] text-white">
+              {data.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-6 text-center text-[#94A3B8]">No recharge requests logged yet.</td>
+                </tr>
+              ) : (
+                data.map((row) => (
+                  <tr key={row.id} className="hover:bg-[#151B2B] transition">
+                    <td className="p-3">{row.user_name || 'User'} ({row.account_phone})</td>
+                    <td className="p-3 font-mono font-bold text-[#818CF8]">{row.phone}</td>
+                    <td className="p-3 uppercase">{row.operator}</td>
+                    <td className="p-3 font-bold text-[#34D399]">₹{row.amount}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                        {row.status}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right">
+                      {row.status === 'Pending' && (
+                        <button
+                          onClick={() => updateStatus(row.id, 'Completed')}
+                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold transition shadow"
+                        >
+                          Mark Completed
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
