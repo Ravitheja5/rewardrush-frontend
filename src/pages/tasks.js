@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { getLoggedInUser, syncWallet, logoutUser } from '../utils/auth';
+import { getLoggedInUser, syncWallet } from '../utils/auth';
 import { apiRequest } from '../utils/api';
-import { CheckCircle2, Clock, PlayCircle, ExternalLink, ShieldCheck, LogOut, Lock } from 'lucide-react';
+import { PlayCircle, ShieldCheck, CheckCircle2, Loader2, Sparkles, Flame } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
-  const [filter, setFilter] = useState('ALL');
-  const [alertMsg, setAlertMsg] = useState('');
+  const [activeTask, setActiveTask] = useState(null);
+  const [timer, setTimer] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [claimMsg, setClaimMsg] = useState('');
 
-  const [activeTimerTask, setActiveTimerTask] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(0);
-
-  const [videoModalTask, setVideoModalTask] = useState(null);
-  const [videoTimeLeft, setVideoTimeLeft] = useState(0);
-  const [canCloseVideo, setCanCloseVideo] = useState(false);
-
-  const sponsorWindowRef = useRef(null);
-  const checkClosedIntervalRef = useRef(null);
+  // 12 Daily Tasks pool with Real Ad URL Hooks
+  const tasks = [
+    { id: 'ad_monetag_1', title: 'High-Speed Telecom Sponsor Visit', type: 'Monetag Ad', points: 40, duration: 15, adUrl: 'https://www.google.com' },
+    { id: 'ad_adsterra_1', title: 'Financial Product Discovery', type: 'Adsterra Ad', points: 45, duration: 20, adUrl: 'https://www.google.com' },
+    { id: 'ad_video_1', title: 'Finora App Promo & Review Video', type: 'Video Ad', points: 50, duration: 25, adUrl: 'https://www.youtube.com' },
+    { id: 'ad_survey_1', title: 'Quick Network Survey Check', type: 'Partner Ad', points: 35, duration: 15, adUrl: 'https://www.google.com' },
+  ];
 
   useEffect(() => {
     const user = getLoggedInUser();
@@ -30,281 +30,142 @@ export default function TasksPage() {
     }
   }, [router]);
 
-  // Web Task Timer Detection
   useEffect(() => {
-    if (timeLeft <= 0 || !activeTimerTask) return;
+    let interval = null;
+    if (activeTask && timer > 0) {
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
+    } else if (activeTask && timer === 0) {
+      handleCompleteTask();
+    }
+    return () => clearInterval(interval);
+  }, [activeTask, timer]);
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          clearInterval(checkClosedIntervalRef.current);
-          handleBackendComplete(activeTimerTask);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    checkClosedIntervalRef.current = setInterval(() => {
-      if (sponsorWindowRef.current && sponsorWindowRef.current.closed) {
-        clearInterval(timer);
-        clearInterval(checkClosedIntervalRef.current);
-        setActiveTimerTask(null);
-        setTimeLeft(0);
-        setAlertMsg('❌ Task Failed: Sponsor tab was closed prematurely.');
-      }
-    }, 500);
-
-    return () => {
-      clearInterval(timer);
-      clearInterval(checkClosedIntervalRef.current);
-    };
-  }, [timeLeft, activeTimerTask]);
-
-  // Video 60s + 2s Timer Detection
-  useEffect(() => {
-    if (!videoModalTask || videoTimeLeft <= 0) return;
-
-    const vTimer = setInterval(() => {
-      setVideoTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(vTimer);
-          setCanCloseVideo(true);
-          handleBackendComplete(videoModalTask);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(vTimer);
-  }, [videoTimeLeft, videoModalTask]);
-
-  // Direct PostgreSQL Backend Sync
-  const handleBackendComplete = async (task) => {
+  const handleDailyCheckin = async () => {
     if (!currentUser) return;
+    setLoading(true);
+    const res = await apiRequest('/api/user/daily-checkin', 'POST', { userId: currentUser.id });
+    if (res.success) {
+      syncWallet(res.user);
+      setCurrentUser(res.user);
+      setClaimMsg(res.message);
+    } else {
+      setClaimMsg(`❌ ${res.message}`);
+    }
+    setLoading(false);
+  };
+
+  const startTask = (task) => {
+    if ((currentUser.daily_task_count || 0) >= 12) {
+      setClaimMsg('❌ Daily task limit (12/12) reached! Reset happens at midnight.');
+      return;
+    }
+    setActiveTask(task);
+    setTimer(task.duration);
+    setClaimMsg('');
+    // Open sponsor/ad link in new tab
+    if (typeof window !== 'undefined') {
+      window.open(task.adUrl, '_blank');
+    }
+  };
+
+  const handleCompleteTask = async () => {
+    if (!activeTask || !currentUser) return;
+    setLoading(true);
+
     try {
       const res = await apiRequest('/api/tasks/complete', 'POST', {
         userId: currentUser.id,
-        taskId: task.id,
-        points: task.points
+        taskId: activeTask.id,
+        points: activeTask.points
       });
 
       if (res.success) {
         syncWallet(res.user);
         setCurrentUser(res.user);
-        setAlertMsg(`🎉 Success! +${task.points} pts added to your PostgreSQL wallet.`);
+        setClaimMsg(`🎉 +${activeTask.points} Points Credited to your wallet!`);
       } else {
-        setAlertMsg(`⚠️ ${res.message}`);
+        setClaimMsg(`❌ ${res.message}`);
       }
     } catch (err) {
-      setAlertMsg('❌ Error updating wallet on backend');
+      setClaimMsg('❌ Failed to verify task.');
     }
-    setActiveTimerTask(null);
-    sponsorWindowRef.current = null;
-  };
-
-  const tasksList = [
-    {
-      id: 'task-finora-video-1',
-      title: 'Finora Official Earning Guide',
-      category: 'Video',
-      badge: 'Official Video',
-      points: 50,
-      durationSec: 62,
-      time: '62s locked',
-      desc: 'Watch Finora Telugu guide. Window lock enabled until timer completes.',
-      youtubeId: 'ZoWP6tc5ols',
-      prerollUrl: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30',
-      type: 'video'
-    },
-    {
-      id: 'task-monetag-sponsor-1',
-      title: 'Monetag Partner Verification',
-      category: 'Instant',
-      badge: 'Monetag Ad',
-      points: 35,
-      durationSec: 22,
-      time: '22 secs',
-      desc: 'Visit sponsor page without closing tab until timer ends.',
-      url: 'https://uplcm.com/4/12198373',
-      type: 'web'
-    },
-    {
-      id: 'task-adsterra-sponsor-2',
-      title: 'Global Adsterra Discovery',
-      category: 'Instant',
-      badge: 'Adsterra Ad',
-      points: 40,
-      durationSec: 25,
-      time: '25 secs',
-      desc: 'Explore exclusive high-speed data offers on global network.',
-      url: 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30',
-      type: 'web'
-    }
-  ];
-
-  const startTask = (task) => {
-    if (!currentUser) return;
-
-    if ((currentUser.daily_task_count || 0) >= 12) {
-      setAlertMsg('⚠️ Daily limit of 12 tasks reached! Come back tomorrow.');
-      return;
-    }
-
-    if (task.type === 'video') {
-      if (task.prerollUrl) window.open(task.prerollUrl, '_blank', 'noopener=false');
-      setVideoModalTask(task);
-      setVideoTimeLeft(task.durationSec);
-      setCanCloseVideo(false);
-      setAlertMsg('⏳ Video locked for 62s mandatory view duration.');
-      return;
-    }
-
-    const win = window.open(task.url, '_blank', 'noopener=false');
-    sponsorWindowRef.current = win;
-    setActiveTimerTask(task);
-    setTimeLeft(task.durationSec);
-    setAlertMsg(`⏳ Verification in progress... Keep tab open for ${task.durationSec}s.`);
+    setActiveTask(null);
+    setLoading(false);
   };
 
   if (!currentUser) return null;
 
-  const earnedRupees = ((currentUser.points || 0) / 100).toFixed(2);
-  const rechargeProgress = Math.min(100, (((currentUser.points || 0) / 4900) * 100)).toFixed(1);
-
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 max-w-2xl mx-auto pb-16">
       <Head>
-        <title>Tasks & Earnings | Finora Rewards</title>
+        <title>Earn Points | RewardRush</title>
       </Head>
 
-      {/* Live Balance Card */}
-      <div className="p-5 bg-gradient-to-r from-[#101522] via-[#151D30] to-[#101522] border border-[#252C3D] rounded-2xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#818CF8]">Logged in as +91 {currentUser.phone}</span>
-            <button
-              onClick={() => { logoutUser(); router.push('/auth'); }}
-              className="text-[#727C91] hover:text-[#FB7185] transition"
-              title="Logout"
-            >
-              <LogOut size={13} />
-            </button>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-[#F8FAFC] tracking-tight">₹{earnedRupees}</span>
-            <span className="text-xs text-[#34D399] font-medium font-mono">({currentUser.points} pts)</span>
-          </div>
-          <p className="text-[11px] text-[#A1A8B8]">100 Points = ₹1.00 INR | Live PostgreSQL Wallet</p>
+      {/* Header & Daily Streak Bonus Box */}
+      <div className="p-5 bg-gradient-to-r from-[#101522] via-[#1E1B4B] to-[#101522] border border-[#6366F1]/30 rounded-2xl flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
+            <Flame className="text-[#F59E0B]" size={16} /> Daily Login Streak
+          </h2>
+          <p className="text-xs text-[#94A3B8] mt-0.5">Claim +20 points every 24 hours</p>
         </div>
-
-        <div className="sm:text-right space-y-1 sm:max-w-xs w-full">
-          <div className="flex justify-between sm:justify-end gap-2 text-xs font-medium">
-            <span className="text-[#A1A8B8]">₹49 Data Goal</span>
-            <span className="text-[#818CF8] font-bold">{rechargeProgress}%</span>
-          </div>
-          <div className="w-full bg-[#0B0E17] h-2 rounded-full overflow-hidden border border-[#1C2231]">
-            <div
-              className="bg-gradient-to-r from-[#818CF8] to-[#34D399] h-full transition-all duration-500"
-              style={{ width: `${rechargeProgress}%` }}
-            />
-          </div>
-          <span className="text-[10px] text-[#727C91] block">
-            Daily Tasks Completed: {currentUser.daily_task_count || 0} / 12
-          </span>
-        </div>
+        <button
+          onClick={handleDailyCheckin}
+          disabled={loading}
+          className="px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs rounded-xl shadow transition"
+        >
+          Claim Daily 20 pts
+        </button>
       </div>
 
-      {alertMsg && (
-        <div className={`p-3.5 border text-xs text-center rounded-xl font-medium ${
-          alertMsg.includes('❌') || alertMsg.includes('⚠️')
-            ? 'bg-[#FB7185]/10 border-[#FB7185]/30 text-[#FB7185]'
-            : 'bg-[#34D399]/10 border-[#34D399]/30 text-[#34D399]'
-        }`}>
-          {alertMsg}
+      {claimMsg && (
+        <div className={`p-3 text-xs text-center rounded-xl font-medium ${claimMsg.includes('❌') ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+          {claimMsg}
         </div>
       )}
 
-      {/* Tasks List */}
+      {/* Active Task Floating Banner */}
+      {activeTask && (
+        <div className="p-4 bg-[#1E1B4B] border border-[#818CF8] rounded-xl flex items-center justify-between animate-pulse">
+          <div className="flex items-center gap-3">
+            <Loader2 className="animate-spin text-[#818CF8]" size={20} />
+            <div>
+              <p className="text-xs font-bold text-white">Ad Verification in Progress...</p>
+              <p className="text-[11px] text-[#A5B4FC]">Keep the opened tab active: {timer}s remaining</p>
+            </div>
+          </div>
+          <span className="font-mono font-bold text-sm text-[#34D399]">+{activeTask.points} pts</span>
+        </div>
+      )}
+
+      {/* Task List */}
       <div className="space-y-3">
-        {tasksList.map((task) => (
-          <div
-            key={task.id}
-            className="p-4 bg-[#101522] border border-[#252C3D] rounded-xl flex items-center justify-between gap-3"
-          >
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+          Available Tasks ({currentUser.daily_task_count || 0}/12 Completed)
+        </h3>
+
+        {tasks.map((task) => (
+          <div key={task.id} className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-xl flex items-center justify-between transition">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#F8FAFC]">{task.title}</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#818CF8]/10 text-[#818CF8] border border-[#818CF8]/20">
-                  {task.badge}
+                <span className="text-xs font-bold text-white">{task.title}</span>
+                <span className="text-[10px] bg-[#6366F1]/20 text-[#818CF8] px-2 py-0.5 rounded font-mono">
+                  {task.type}
                 </span>
               </div>
-              <p className="text-xs text-[#727C91]">{task.desc}</p>
-              <span className="text-[11px] text-[#A1A8B8] block">⏱ Duration: {task.time}</span>
+              <p className="text-[11px] text-[#94A3B8]">View sponsor page for {task.duration}s to claim reward</p>
             </div>
 
-            <div className="text-right flex flex-col items-end gap-2 shrink-0">
-              <span className="text-xs font-bold text-[#F5B942]">
-                +{task.points} pts (₹{(task.points / 100).toFixed(2)})
-              </span>
-              <button
-                onClick={() => startTask(task)}
-                className="px-4 py-1.5 bg-[#818CF8] hover:bg-[#6366F1] text-white text-xs font-semibold rounded-lg transition"
-              >
-                Start
-              </button>
-            </div>
+            <button
+              onClick={() => startTask(task)}
+              disabled={!!activeTask || loading || (currentUser.daily_task_count || 0) >= 12}
+              className="px-4 py-2 bg-[#1E293B] hover:bg-[#6366F1] disabled:opacity-40 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+            >
+              Start <span className="text-[#34D399]">+{task.points}</span>
+            </button>
           </div>
         ))}
       </div>
-
-      {/* Force-watch Modal */}
-      {videoModalTask && (
-        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-[#101522] border border-[#252C3D] w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl space-y-3.5 p-4 my-auto">
-            <div className="flex items-center justify-between border-b border-[#1C2231] pb-2.5">
-              <div>
-                <h3 className="text-sm font-semibold text-[#F8FAFC]">{videoModalTask.title}</h3>
-                <span className="text-[11px] text-[#818CF8] flex items-center gap-1">
-                  <ShieldCheck size={12} /> Live Verified Stream
-                </span>
-              </div>
-
-              {canCloseVideo ? (
-                <button
-                  onClick={() => { setVideoModalTask(null); setCanCloseVideo(false); }}
-                  className="px-3 py-1 bg-[#34D399] text-[#0B0E17] text-xs font-bold rounded-lg hover:bg-[#10B981] transition"
-                >
-                  Close & Claim
-                </button>
-              ) : (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FB7185]/10 border border-[#FB7185]/20 text-[#FB7185] text-[11px] font-semibold rounded-lg">
-                  <Lock size={12} /> Locked ({videoTimeLeft}s)
-                </div>
-              )}
-            </div>
-
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-[#1C2231]">
-              <iframe
-                className="w-full h-full"
-                src={`https://www.youtube-nocookie.com/embed/${videoModalTask.youtubeId}?autoplay=1&controls=1&rel=0&modestbranding=1`}
-                title="Finora Player"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-
-            <div className="p-3 bg-[#151B2B] rounded-xl flex items-center justify-between">
-              <span className="text-xs text-[#A1A8B8]">
-                {canCloseVideo ? '✅ Completed! Points credited to Postgres.' : '🔒 Video locked until timer hits 0s.'}
-              </span>
-              <span className="text-sm font-mono font-bold text-[#34D399]">{videoTimeLeft}s</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

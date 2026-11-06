@@ -1,192 +1,118 @@
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { ShieldCheck, CheckCircle2, XCircle, RefreshCw, Clock, ArrowLeft } from 'lucide-react';
+import Head from 'next/head';
+import { apiRequest } from '../utils/api';
+import { Check, X, Shield, RefreshCw } from 'lucide-react';
 
-export default function AdminPanel() {
-  const [authKey, setAuthKey] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [redemptions, setRedemptions] = useState([]);
+export default function AdminPage() {
+  const [secret, setSecret] = useState('');
+  const [isAuth, setIsAuth] = useState(false);
+  const [recharges, setRecharges] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [actionNotes, setActionNotes] = useState({});
+  const [msg, setMsg] = useState('');
 
-  const checkLogin = (key) => {
-    if (key === 'admin123') {
-      setIsAuthenticated(true);
-      fetchRedemptions('admin123');
-    }
-  };
-
-  const fetchRedemptions = async (key) => {
+  const fetchRecharges = async (pass) => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/admin/redemptions', {
-        headers: { 'x-admin-key': key || authKey }
+      const res = await fetch('https://rewards-app-backend-lq2v.onrender.com/api/admin/recharges', {
+        headers: { 'admin-secret': pass || secret }
       });
       const data = await res.json();
       if (data.success) {
-        setRedemptions(data.redemptions);
+        setRecharges(data.data);
+        setIsAuth(true);
+      } else {
+        setMsg('Invalid Admin Secret');
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      setMsg('Server Connection Error');
     }
+    setLoading(false);
   };
 
-  const handleUpdate = async (id, status) => {
-    const note = actionNotes[id] || '';
-    try {
-      const res = await fetch('http://localhost:5000/api/admin/update-status', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-admin-key': authKey
-        },
-        body: JSON.stringify({ id, status, remarks: note })
-      });
-      const data = await res.json();
-      if (data.success) {
-        fetchRedemptions(authKey);
-      }
-    } catch (e) {
-      alert('Error updating status');
-    }
+  const updateStatus = async (id, status) => {
+    await fetch('https://rewards-app-backend-lq2v.onrender.com/api/admin/recharge/status', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'admin-secret': secret
+      },
+      body: JSON.stringify({ id, status })
+    });
+    fetchRecharges();
   };
 
-  if (!isAuthenticated) {
+  if (!isAuth) {
     return (
-      <div style={{ maxWidth: '400px', margin: '100px auto', padding: '24px', background: '#111427', borderRadius: '16px', border: '1px solid #23284d', color: '#fff', textAlign: 'center', fontFamily: 'sans-serif' }}>
-        <ShieldCheck size={40} color="#f59e0b" style={{ margin: '0 auto 12px' }} />
-        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>Admin Dashboard</h2>
-        <p style={{ color: '#8f95b2', fontSize: '13px', marginBottom: '20px' }}>Enter master security key to manage payouts</p>
+      <div className="max-w-md mx-auto mt-20 p-6 bg-[#101522] border border-[#252C3D] rounded-2xl space-y-4">
+        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <Shield size={20} className="text-[#818CF8]" /> RewardRush Admin Panel
+        </h2>
+        {msg && <p className="text-xs text-red-400">{msg}</p>}
         <input
           type="password"
-          placeholder="Enter Admin Key (e.g. admin123)"
-          value={authKey}
-          onChange={(e) => setAuthKey(e.target.value)}
-          style={{ width: '100%', boxSizing: 'border-box', background: '#0a0b16', border: '1px solid #23284d', borderRadius: '10px', padding: '12px', color: '#fff', fontSize: '14px', outline: 'none', marginBottom: '16px' }}
+          placeholder="Enter Admin Secret Key"
+          value={secret}
+          onChange={(e) => setSecret(e.target.value)}
+          className="w-full px-3.5 py-2.5 bg-[#0B0E17] border border-[#252C3D] rounded-xl text-xs text-white"
         />
         <button
-          onClick={() => checkLogin(authKey)}
-          style={{ width: '100%', padding: '12px', background: '#f59e0b', color: '#000', fontWeight: '700', borderRadius: '10px', border: 'none', cursor: 'pointer' }}
+          onClick={() => fetchRecharges(secret)}
+          className="w-full py-2.5 bg-[#6366F1] text-white font-bold text-xs rounded-xl"
         >
-          Login to Control Panel
+          Access Admin Dashboard
         </button>
       </div>
     );
   }
 
-  const pendingCount = redemptions.filter(r => r.status === 'PENDING').length;
-
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '24px 16px', color: '#fff', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="max-w-4xl mx-auto space-y-6 pb-16">
+      <Head>
+        <title>Admin - Recharges Management</title>
+      </Head>
+
+      <div className="flex items-center justify-between border-b border-[#252C3D] pb-4">
         <div>
-          <Link href="/" style={{ color: '#8f95b2', textDecoration: 'none', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
-            <ArrowLeft size={14} /> Back to User App
-          </Link>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>Payout & Voucher Dispatch Panel</h1>
+          <h1 className="text-xl font-bold text-white">Live Data Recharge Claims</h1>
+          <p className="text-xs text-[#94A3B8]">Approve ₹49 unlimited data packs</p>
         </div>
         <button
-          onClick={() => fetchRedemptions(authKey)}
-          style={{ background: '#1e2238', border: '1px solid #23284d', color: '#fff', padding: '8px 14px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '12px' }}
+          onClick={() => fetchRecharges()}
+          className="p-2 bg-[#1E293B] text-white rounded-lg hover:bg-[#334155]"
         >
-          <RefreshCw size={14} /> Refresh
+          <RefreshCw size={16} />
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-        <div style={{ background: '#111427', border: '1px solid #23284d', padding: '14px 20px', borderRadius: '12px', flex: 1 }}>
-          <div style={{ color: '#8f95b2', fontSize: '12px' }}>Action Required</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: pendingCount > 0 ? '#ef4444' : '#10b981' }}>{pendingCount} Pending</div>
-        </div>
-        <div style={{ background: '#111427', border: '1px solid #23284d', padding: '14px 20px', borderRadius: '12px', flex: 1 }}>
-          <div style={{ color: '#8f95b2', fontSize: '12px' }}>Total Requests</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>{redemptions.length}</div>
-        </div>
-      </div>
-
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#8f95b2' }}>Loading live requests...</div>
-      ) : redemptions.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px', background: '#111427', borderRadius: '12px', color: '#8f95b2' }}>
-          No withdrawal claims found yet.
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gap: '14px' }}>
-          {redemptions.map(item => (
-            <div
-              key={item.id}
-              style={{
-                background: item.status === 'PENDING' ? '#14182e' : '#111427',
-                border: item.status === 'PENDING' ? '1px solid #f59e0b' : '1px solid #23284d',
-                borderRadius: '14px',
-                padding: '16px'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{item.rewardTitle}</span>
-                    <span style={{ fontSize: '11px', background: '#23284d', padding: '2px 8px', borderRadius: '6px', color: '#f59e0b', fontWeight: 'bold' }}>
-                      {item.pointsDeducted} PTS (₹{item.amount})
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '4px' }}>
-                    Send To: <strong style={{ color: '#10b981', fontSize: '15px' }}>{item.targetValue}</strong>
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#8f95b2', marginTop: '2px' }}>
-                    User ID: #{item.userId} &bull; Reg Mobile: {item.userPhone || 'N/A'} &bull; Time: {new Date(item.createdAt).toLocaleTimeString()}
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    background: item.status === 'PENDING' ? 'rgba(245, 158, 11, 0.15)' : item.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                    color: item.status === 'PENDING' ? '#f59e0b' : item.status === 'COMPLETED' ? '#10b981' : '#ef4444'
-                  }}>
-                    {item.status}
-                  </span>
-                </div>
-              </div>
-
-              {item.status === 'PENDING' && (
-                <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #23284d', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    placeholder="Enter Voucher Code / Recharge TxID (Optional)"
-                    value={actionNotes[item.id] || ''}
-                    onChange={(e) => setActionNotes({ ...actionNotes, [item.id]: e.target.value })}
-                    style={{ flex: 1, background: '#0a0b16', border: '1px solid #23284d', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '12px', outline: 'none' }}
-                  />
-                  <button
-                    onClick={() => handleUpdate(item.id, 'COMPLETED')}
-                    style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    <CheckCircle2 size={14} /> Send & Approve
-                  </button>
-                  <button
-                    onClick={() => handleUpdate(item.id, 'REJECTED')}
-                    style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    <XCircle size={14} /> Reject & Refund
-                  </button>
-                </div>
-              )}
-
-              {item.remarks && (
-                <div style={{ marginTop: '8px', fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>
-                  Note: {item.remarks}
-                </div>
-              )}
+      <div className="space-y-3">
+        {recharges.map((r) => (
+          <div key={r.id} className="p-4 bg-[#101522] border border-[#252C3D] rounded-xl flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-white">{r.phone} ({r.operator})</p>
+              <p className="text-xs text-[#94A3B8]">Amount: ₹{r.amount} | Date: {new Date(r.requested_at).toLocaleString()}</p>
+              <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${r.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                {r.status}
+              </span>
             </div>
-          ))}
-        </div>
-      )}
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => updateStatus(r.id, 'Completed')}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg flex items-center gap-1"
+              >
+                <Check size={14} /> Recharged
+              </button>
+              <button
+                onClick={() => updateStatus(r.id, 'Rejected')}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg flex items-center gap-1"
+              >
+                <X size={14} /> Reject
+              </button>
+            </div>
+          </div>
+        ))}
+        {recharges.length === 0 && <p className="text-xs text-[#94A3B8]">No pending recharges right now.</p>}
+      </div>
     </div>
   );
 }
