@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getLoggedInUser, syncWallet } from '../utils/auth';
 import { apiRequest } from '../utils/api';
-import { Flame, PlayCircle, Loader2, Zap, CheckCircle2, XCircle, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Flame, Play, Loader2, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
@@ -13,27 +13,19 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(false);
   const [claimMsg, setClaimMsg] = useState('');
 
-  // 130 Dynamic Tasks Pool (Different High-Paying Ad Networks)
-  const baseAdTypes = [
-    { title: 'Monetag Rewarded Video Stream', type: 'Monetag Video', points: 45, duration: 15, url: 'https://www.highcpmgate.com/sample_monetag' },
-    { title: 'Adsterra 5G Telecom Sponsor Ad', type: 'Adsterra Smartlink', points: 40, duration: 15, url: 'https://www.profitablecpmrate.com/sample_adsterra' },
-    { title: 'Fintech Credit Score & Card Discovery', type: 'CPA Offer', points: 45, duration: 20, url: 'https://groww.in' },
-    { title: 'Unlimited High-Speed Data Offer Check', type: 'Direct Ad', points: 35, duration: 12, url: 'https://jio.com' },
-    { title: 'Monetag Interstitial High CPM Stream', type: 'Monetag Banner', points: 40, duration: 15, url: 'https://www.highcpmgate.com/sample_monetag2' }
-  ];
+  // Mee Live High-CPM Ad Link
+  const LIVE_AD_URL = 'https://asiafilm.org/4/2a9f2d1477def572c8eea4e320a1ae30';
 
-  // 130 Tasks List generate chesthundhi
-  const dynamicTasksList = Array.from({ length: 130 }, (_, index) => {
-    const template = baseAdTypes[index % baseAdTypes.length];
-    return {
-      id: `task_dyn_${index + 1}`,
-      title: `${template.title} #${index + 1}`,
-      type: template.type,
-      points: template.points,
-      duration: template.duration,
-      url: template.url
-    };
-  });
+  // 130 Daily Tasks (Each gives 40 pts, 15 seconds)
+  const tasksList = Array.from({ length: 130 }, (_, index) => ({
+    id: `ad_task_${index + 1}`,
+    number: index + 1,
+    title: `Sponsored Telecom Ad Stream #${index + 1}`,
+    type: 'High-CPM Ad',
+    points: 40,
+    duration: 15,
+    url: LIVE_AD_URL
+  }));
 
   useEffect(() => {
     const user = getLoggedInUser();
@@ -44,7 +36,7 @@ export default function TasksPage() {
     }
   }, [router]);
 
-  // Robust Timestamp-Based Timer (Window Switch Chesina Seconds Thaggavu / Aagavu)
+  // Exact timestamp-based timer (Window change chesina seconds aagavu)
   useEffect(() => {
     if (!activeTask) return;
 
@@ -52,10 +44,10 @@ export default function TasksPage() {
     setTimer(activeTask.duration);
 
     const interval = setInterval(() => {
-      const remainingSeconds = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-      setTimer(remainingSeconds);
+      const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+      setTimer(remaining);
 
-      if (remainingSeconds <= 0) {
+      if (remaining <= 0) {
         clearInterval(interval);
         handleCompleteTask();
       }
@@ -80,12 +72,14 @@ export default function TasksPage() {
 
   const startTask = (task) => {
     if ((currentUser.daily_task_count || 0) >= 130) {
-      setClaimMsg('❌ Mee daily limit (130/130 tasks) poorthi ayindi! Midnight reset avthundi.');
+      setClaimMsg('❌ Daily limit of 130 tasks reached for today!');
       return;
     }
+
     setActiveTask(task);
     setClaimMsg('');
-    // Open Ad in new tab
+
+    // Open mee direct ad link in new tab
     if (typeof window !== 'undefined') {
       window.open(task.url, '_blank');
     }
@@ -105,13 +99,14 @@ export default function TasksPage() {
       if (res.success) {
         syncWallet(res.user);
         setCurrentUser(res.user);
-        setClaimMsg(`🎉 +${activeTask.points} Points Mee Wallet Lo Add Ayyayi!`);
+        setClaimMsg(`🎉 +${activeTask.points} Points Credited to Wallet!`);
       } else {
         setClaimMsg(`❌ ${res.message}`);
       }
     } catch (err) {
-      setClaimMsg('❌ Verification server issue. Try again.');
+      setClaimMsg('❌ Verification server error');
     }
+
     setActiveTask(null);
     setLoading(false);
   };
@@ -121,7 +116,7 @@ export default function TasksPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-24">
       <Head>
-        <title>Tasks & Real Ads | RewardRush</title>
+        <title>Tasks & Earning | RewardRush</title>
       </Head>
 
       {/* Daily Streak Card */}
@@ -134,7 +129,7 @@ export default function TasksPage() {
         </div>
         <button
           onClick={handleDailyCheckin}
-          disabled={loading}
+          disabled={loading || !!activeTask}
           className="px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs rounded-xl shadow transition"
         >
           Claim 25 pts
@@ -147,58 +142,41 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* FULL-SCREEN AD COUNTDOWN TIMER OVERLAY */}
+      {/* Floating Timer Verification Banner */}
       {activeTask && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-[#101522] border-2 border-[#818CF8] rounded-2xl p-6 text-center space-y-5 shadow-2xl animate-fade-in">
-            <div className="w-16 h-16 mx-auto bg-[#818CF8]/20 text-[#818CF8] rounded-full flex items-center justify-center">
-              <span className="text-2xl font-black font-mono">{timer}s</span>
+        <div className="p-4 bg-[#1E1B4B] border-2 border-[#818CF8] rounded-2xl flex items-center justify-between shadow-2xl animate-pulse">
+          <div className="flex items-center gap-3">
+            <Loader2 className="animate-spin text-[#818CF8]" size={22} />
+            <div>
+              <p className="text-xs font-bold text-white">Ad Verification Active</p>
+              <p className="text-[11px] text-[#A5B4FC]">Please wait {timer}s before switching back</p>
             </div>
-
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-white">Sponsor Ad Verification in Progress</h3>
-              <p className="text-xs text-[#94A3B8]">
-                New tab lo ad load avuthundi. Ee screen close cheyakunda {timer} seconds wait cheyandi.
-              </p>
-            </div>
-
-            <div className="w-full bg-[#1E293B] h-2.5 rounded-full overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-[#818CF8] to-[#34D399] h-full transition-all duration-300"
-                style={{ width: `${((activeTask.duration - timer) / activeTask.duration) * 100}%` }}
-              />
-            </div>
-
-            <div className="p-3 bg-[#0B0E17] rounded-xl flex items-center justify-between text-xs text-[#94A3B8]">
-              <span>Reward Points:</span>
-              <span className="font-bold text-[#34D399] font-mono">+{activeTask.points} Points</span>
-            </div>
-
-            <p className="text-[11px] text-[#64748B] flex items-center justify-center gap-1">
-              <ShieldCheck size={14} className="text-[#34D399]" /> IST Verified Instant Credit
-            </p>
+          </div>
+          <div className="text-right">
+            <span className="font-mono text-xl font-black text-[#34D399]">{timer}s</span>
+            <span className="block text-[10px] text-[#94A3B8]">+{activeTask.points} pts</span>
           </div>
         </div>
       )}
 
-      {/* 130 TASKS LIST */}
+      {/* 130 Tasks List */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
-            Daily Earning Tasks Pool ({currentUser.daily_task_count || 0} / 130 Done)
+            Today's Ad Tasks ({currentUser.daily_task_count || 0}/130 Completed)
           </h3>
           <span className="text-xs font-bold text-[#34D399]">
-            Goal: 4,900 pts (₹49 Data Pack)
+            Balance: {currentUser.points || 0} pts
           </span>
         </div>
 
         <div className="space-y-2.5">
-          {dynamicTasksList.map((task, idx) => {
+          {tasksList.map((task, idx) => {
             const isCompleted = idx < (currentUser.daily_task_count || 0);
 
             return (
               <div 
-                key={task.id} 
+                key={task.id}
                 className={`p-4 bg-[#101522] border rounded-xl flex items-center justify-between transition ${
                   isCompleted ? 'border-[#1C2231] opacity-50' : 'border-[#252C3D] hover:border-[#6366F1]/50'
                 }`}
@@ -210,20 +188,20 @@ export default function TasksPage() {
                       {task.type}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#94A3B8]">Watch sponsor ad for {task.duration}s to credit points</p>
+                  <p className="text-[11px] text-[#94A3B8]">View sponsor ad for 15s to credit points</p>
                 </div>
 
                 {isCompleted ? (
                   <span className="text-xs font-bold text-[#34D399] flex items-center gap-1">
-                    <CheckCircle2 size={16} /> Completed
+                    <CheckCircle2 size={16} /> Done
                   </span>
                 ) : (
                   <button
                     onClick={() => startTask(task)}
-                    disabled={!!activeTask || loading}
+                    disabled={!!activeTask || loading || (currentUser.daily_task_count || 0) >= 130}
                     className="px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] disabled:opacity-40 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow"
                   >
-                    Start <span className="text-[#34D399]">+{task.points}</span>
+                    <Play size={12} fill="white" /> Start <span className="text-[#34D399]">+{task.points}</span>
                   </button>
                 )}
               </div>
