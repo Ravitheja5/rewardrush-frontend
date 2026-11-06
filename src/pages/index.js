@@ -2,29 +2,34 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { getLoggedInUser } from '../utils/auth';
-import { Zap, ArrowRight, ShieldCheck, Flame, Gift } from 'lucide-react';
+import { getLoggedInUser, fetchLiveUser } from '../utils/auth';
+import { Zap, RefreshCw } from 'lucide-react';
 
 export default function DashboardHome() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
+  const [syncing, setSyncing] = useState(true);
 
   useEffect(() => {
-    const user = getLoggedInUser();
-    if (!user) {
+    const local = getLoggedInUser();
+    if (!local) {
       router.push('/auth');
-    } else {
-      setCurrentUser(user);
+      return;
     }
+    setCurrentUser(local);
+
+    // Live Database Sync on every load
+    fetchLiveUser().then((liveData) => {
+      if (liveData) setCurrentUser(liveData);
+      setSyncing(false);
+    });
   }, [router]);
 
   if (!currentUser) return null;
 
   const points = currentUser.points || 0;
   const progressPercent = Math.min(100, ((points / 4900) * 100).toFixed(1));
-
-  // Phone number kakunda user pettina peru chupinchadam
-  const displayName = currentUser.name || 'Member';
+  const displayName = currentUser.name && currentUser.name.trim() !== '' ? currentUser.name : 'Member';
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-24">
@@ -32,7 +37,6 @@ export default function DashboardHome() {
         <title>Dashboard | RewardRush</title>
       </Head>
 
-      {/* Greeting Header */}
       <div className="space-y-1">
         <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
           Welcome back, {displayName} 👋
@@ -42,12 +46,11 @@ export default function DashboardHome() {
         </p>
       </div>
 
-      {/* Main Balance Card */}
       <div className="p-6 bg-gradient-to-br from-[#101522] via-[#1E1B4B] to-[#101522] border border-[#6366F1]/30 rounded-2xl space-y-4 shadow-xl">
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-[#94A3B8] font-bold">
-              Available Live Balance
+            <span className="text-[11px] uppercase tracking-wider text-[#94A3B8] font-bold flex items-center gap-1.5">
+              Available Live Balance {syncing && <RefreshCw size={10} className="animate-spin text-[#818CF8]" />}
             </span>
             <div className="flex items-baseline gap-2 mt-1">
               <h2 className="text-3xl font-black text-white">{points} <span className="text-sm font-normal text-[#818CF8]">pts</span></h2>
@@ -77,7 +80,6 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* Goal Progress Bar */}
       <div className="p-5 bg-[#101522] border border-[#252C3D] rounded-2xl space-y-3">
         <div className="flex items-center justify-between text-xs">
           <span className="font-bold text-white flex items-center gap-1.5">

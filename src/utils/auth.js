@@ -1,54 +1,36 @@
-import { apiRequest } from './api';
-
-export const getDeviceId = () => {
-  if (typeof window === 'undefined') return '';
-  let id = localStorage.getItem('rr_device_id');
-  if (!id) {
-    id = 'dev_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
-    localStorage.setItem('rr_device_id', id);
-  }
-  return id;
-};
-
 export const getLoggedInUser = () => {
   if (typeof window === 'undefined') return null;
-  const user = localStorage.getItem('rr_user_session');
+  const user = localStorage.getItem('rr_user');
   return user ? JSON.parse(user) : null;
 };
 
-export const registerUser = async (name, phone, password) => {
-  const deviceId = getDeviceId();
-  try {
-    const res = await apiRequest('/api/auth/register', 'POST', { name, phone, password, deviceId });
-    if (res.success) {
-      localStorage.setItem('rr_user_session', JSON.stringify(res.user));
-    }
-    return res;
-  } catch (err) {
-    return { success: false, message: 'Server connection error' };
-  }
-};
-
-export const loginUser = async (phone, password) => {
-  try {
-    const res = await apiRequest('/api/auth/login', 'POST', { phone, password });
-    if (res.success) {
-      localStorage.setItem('rr_user_session', JSON.stringify(res.user));
-    }
-    return res;
-  } catch (err) {
-    return { success: false, message: 'Server connection error' };
-  }
-};
-
 export const syncWallet = (updatedUser) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('rr_user_session', JSON.stringify(updatedUser));
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('rr_user', JSON.stringify(updatedUser));
+  window.dispatchEvent(new Event('walletUpdated'));
+};
+
+export const fetchLiveUser = async () => {
+  if (typeof window === 'undefined') return null;
+  const cached = getLoggedInUser();
+  if (!cached || !cached.phone) return null;
+
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://rewards-app-backend-lq2v.onrender.com';
+    const res = await fetch(`${apiUrl}/api/user/me?phone=${cached.phone}`);
+    const data = await res.json();
+    if (data.success && data.user) {
+      localStorage.setItem('rr_user', JSON.stringify(data.user));
+      return data.user;
+    }
+  } catch (err) {
+    console.error('Failed to fetch live balance:', err);
   }
+  return cached;
 };
 
 export const logoutUser = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('rr_user_session');
-  }
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('rr_user');
+  window.location.href = '/auth';
 };
