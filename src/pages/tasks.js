@@ -3,7 +3,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getLoggedInUser, syncWallet } from '../utils/auth';
 import { apiRequest } from '../utils/api';
-import { PlayCircle, ShieldCheck, CheckCircle2, Loader2, Sparkles, Flame } from 'lucide-react';
+import { Flame, PlayCircle, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
@@ -13,12 +13,14 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(false);
   const [claimMsg, setClaimMsg] = useState('');
 
-  // 12 Daily Tasks pool with Real Ad URL Hooks
-  const tasks = [
-    { id: 'ad_monetag_1', title: 'High-Speed Telecom Sponsor Visit', type: 'Monetag Ad', points: 40, duration: 15, adUrl: 'https://www.google.com' },
-    { id: 'ad_adsterra_1', title: 'Financial Product Discovery', type: 'Adsterra Ad', points: 45, duration: 20, adUrl: 'https://www.google.com' },
-    { id: 'ad_video_1', title: 'Finora App Promo & Review Video', type: 'Video Ad', points: 50, duration: 25, adUrl: 'https://www.youtube.com' },
-    { id: 'ad_survey_1', title: 'Quick Network Survey Check', type: 'Partner Ad', points: 35, duration: 15, adUrl: 'https://www.google.com' },
+  // Balanced High-Earning Task Pool (40 pts average * 125 tasks = 5,000 pts / day = 1 Recharge Pack)
+  const taskCatalog = [
+    { id: 'monetag_smart_1', title: 'Telecom Sponsor Video Stream', type: 'High Value Ad', points: 45, duration: 15, url: 'https://www.google.com' },
+    { id: 'adsterra_pop_1', title: 'Fintech Credit Score Discovery', type: 'Adsterra Ad', points: 40, duration: 15, url: 'https://www.google.com' },
+    { id: 'partner_direct_1', title: '5G Data Offers Exploration', type: 'Partner Link', points: 35, duration: 12, url: 'https://www.google.com' },
+    { id: 'video_guide_1', title: 'Finora Platform Earning Guide', type: 'Sponsored Video', points: 50, duration: 20, url: 'https://www.youtube.com' },
+    { id: 'adsterra_direct_2', title: 'Quick Instant Cashback Verification', type: 'CPA Task', points: 40, duration: 15, url: 'https://www.google.com' },
+    { id: 'monetag_video_2', title: 'Fast-Track Data Accelerator Ad', type: 'Monetag Ad', points: 45, duration: 18, url: 'https://www.google.com' }
   ];
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function TasksPage() {
     return () => clearInterval(interval);
   }, [activeTask, timer]);
 
-  const handleDailyCheckin = async () => {
+  const handleDailyStreak = async () => {
     if (!currentUser) return;
     setLoading(true);
     const res = await apiRequest('/api/user/daily-checkin', 'POST', { userId: currentUser.id });
@@ -55,16 +57,15 @@ export default function TasksPage() {
   };
 
   const startTask = (task) => {
-    if ((currentUser.daily_task_count || 0) >= 12) {
-      setClaimMsg('❌ Daily task limit (12/12) reached! Reset happens at midnight.');
+    if ((currentUser.daily_task_count || 0) >= 130) {
+      setClaimMsg('❌ You have completed the maximum 130 daily tasks today! Reset happens at midnight.');
       return;
     }
     setActiveTask(task);
     setTimer(task.duration);
     setClaimMsg('');
-    // Open sponsor/ad link in new tab
     if (typeof window !== 'undefined') {
-      window.open(task.adUrl, '_blank');
+      window.open(task.url, '_blank');
     }
   };
 
@@ -82,12 +83,12 @@ export default function TasksPage() {
       if (res.success) {
         syncWallet(res.user);
         setCurrentUser(res.user);
-        setClaimMsg(`🎉 +${activeTask.points} Points Credited to your wallet!`);
+        setClaimMsg(`🎉 +${activeTask.points} Points added!`);
       } else {
         setClaimMsg(`❌ ${res.message}`);
       }
     } catch (err) {
-      setClaimMsg('❌ Failed to verify task.');
+      setClaimMsg('❌ Verification failed');
     }
     setActiveTask(null);
     setLoading(false);
@@ -98,23 +99,23 @@ export default function TasksPage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-16">
       <Head>
-        <title>Earn Points | RewardRush</title>
+        <title>Tasks & Earning | RewardRush</title>
       </Head>
 
-      {/* Header & Daily Streak Bonus Box */}
+      {/* Daily Streak Box */}
       <div className="p-5 bg-gradient-to-r from-[#101522] via-[#1E1B4B] to-[#101522] border border-[#6366F1]/30 rounded-2xl flex items-center justify-between">
         <div>
           <h2 className="text-sm font-bold text-white flex items-center gap-1.5">
-            <Flame className="text-[#F59E0B]" size={16} /> Daily Login Streak
+            <Flame className="text-amber-400" size={16} /> Daily Check-in Bonus
           </h2>
-          <p className="text-xs text-[#94A3B8] mt-0.5">Claim +20 points every 24 hours</p>
+          <p className="text-xs text-[#94A3B8] mt-0.5">Collect +25 points free everyday</p>
         </div>
         <button
-          onClick={handleDailyCheckin}
+          onClick={handleDailyStreak}
           disabled={loading}
           className="px-4 py-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold text-xs rounded-xl shadow transition"
         >
-          Claim Daily 20 pts
+          Claim 25 pts
         </button>
       </div>
 
@@ -124,27 +125,32 @@ export default function TasksPage() {
         </div>
       )}
 
-      {/* Active Task Floating Banner */}
+      {/* Active Running Task */}
       {activeTask && (
         <div className="p-4 bg-[#1E1B4B] border border-[#818CF8] rounded-xl flex items-center justify-between animate-pulse">
           <div className="flex items-center gap-3">
             <Loader2 className="animate-spin text-[#818CF8]" size={20} />
             <div>
-              <p className="text-xs font-bold text-white">Ad Verification in Progress...</p>
-              <p className="text-[11px] text-[#A5B4FC]">Keep the opened tab active: {timer}s remaining</p>
+              <p className="text-xs font-bold text-white">Sponsor View in Progress...</p>
+              <p className="text-[11px] text-[#A5B4FC]">Please wait {timer}s to claim points</p>
             </div>
           </div>
           <span className="font-mono font-bold text-sm text-[#34D399]">+{activeTask.points} pts</span>
         </div>
       )}
 
-      {/* Task List */}
+      {/* Tasks List */}
       <div className="space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
-          Available Tasks ({currentUser.daily_task_count || 0}/12 Completed)
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
+            Today's Earn Tasks ({currentUser.daily_task_count || 0}/130 Completed)
+          </h3>
+          <span className="text-xs font-bold text-[#34D399]">
+            Target: 4,900 pts = ₹49 Data Pack
+          </span>
+        </div>
 
-        {tasks.map((task) => (
+        {taskCatalog.map((task) => (
           <div key={task.id} className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-xl flex items-center justify-between transition">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -153,12 +159,12 @@ export default function TasksPage() {
                   {task.type}
                 </span>
               </div>
-              <p className="text-[11px] text-[#94A3B8]">View sponsor page for {task.duration}s to claim reward</p>
+              <p className="text-[11px] text-[#94A3B8]">Complete {task.duration}s view to credit {task.points} pts</p>
             </div>
 
             <button
               onClick={() => startTask(task)}
-              disabled={!!activeTask || loading || (currentUser.daily_task_count || 0) >= 12}
+              disabled={!!activeTask || loading || (currentUser.daily_task_count || 0) >= 130}
               className="px-4 py-2 bg-[#1E293B] hover:bg-[#6366F1] disabled:opacity-40 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5"
             >
               Start <span className="text-[#34D399]">+{task.points}</span>

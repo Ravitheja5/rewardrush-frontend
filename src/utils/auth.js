@@ -16,17 +16,10 @@ export const getLoggedInUser = () => {
   return user ? JSON.parse(user) : null;
 };
 
-// Backward compatibility export to prevent any build breakage
-export const getAllUsers = () => {
-  if (typeof window === 'undefined') return {};
-  const user = getLoggedInUser();
-  return user ? { [user.phone]: user } : {};
-};
-
-export const registerUser = async (phone, password) => {
+export const registerUser = async (name, phone, password) => {
   const deviceId = getDeviceId();
   try {
-    const res = await apiRequest('/api/auth/register', 'POST', { phone, password, deviceId });
+    const res = await apiRequest('/api/auth/register', 'POST', { name, phone, password, deviceId });
     if (res.success) {
       localStorage.setItem('rr_user_session', JSON.stringify(res.user));
     }
