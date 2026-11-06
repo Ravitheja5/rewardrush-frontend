@@ -142,7 +142,7 @@ export default function AuthPage() {
             }}
             className="text-xs text-[#818CF8] hover:underline"
           >
-            {isLogin ? "Account ledha? Sign Up cheyandi" : "Already account undha? Sign In"}
+            {isLogin ? "Don't have an account? Sign Up" : "Already account undha? Sign In"}
           </button>
         </div>
       </div>
