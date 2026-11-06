@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { getAuthSession, fetchLiveUserFromDB } from '../utils/auth';
-import { ExternalLink, CheckCircle, Clock, Zap, Award, Flame } from 'lucide-react';
+import { ExternalLink, CheckCircle, Clock, Zap, Flame, ShieldCheck } from 'lucide-react';
 
 export default function TasksPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('smartlinks'); // 'smartlinks' (Stream 1) vs 'partner' (Stream 2)
+  const [activeTab, setActiveTab] = useState('daily_ads');
   const [activeTask, setActiveTask] = useState(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [claiming, setClaiming] = useState(false);
@@ -16,44 +16,67 @@ export default function TasksPage() {
 
   const smartlinkUrl = 'https://asiafilm.org/4/2b6d7c7eb71fdb958e6581a1fabc946a';
 
-  // STREAM 1: Daily Adsterra Smartlink Tasks (Target: 130 Tasks/Day @ 40 pts each)
-  const smartlinkTasks = Array.from({ length: 30 }, (_, i) => ({
-    id: `smartlink_task_${i + 1}`,
+  // STREAM 1: 130 Daily Adsterra Tasks @ 38 points each = 4,940 Points (Full ₹49 Data Pack)
+  const dailyAdTasks = Array.from({ length: 130 }, (_, i) => ({
+    id: `ad_task_${i + 1}`,
     title: `Sponsor Ad Task #${i + 1}`,
-    points: 40,
+    points: 38,
     seconds: 60,
     url: smartlinkUrl,
-    type: 'Smartlink 60s'
+    badge: 'Daily 130 Pool'
   }));
 
-  // STREAM 2: High Commission Affiliate Offers (Fast Points to reach ₹49 Pack)
-  const highCommissionOffers = [
+  // STREAM 2: vCommission Financial & Affiliate Campaigns (High-value leads)
+  const vCommissionOffers = [
     {
-      id: 'cpa_offer_1',
-      title: 'FinTech Savings App Install & Explore',
-      points: 500,
-      seconds: 60,
-      rewardText: '₹5.00 Value',
-      url: smartlinkUrl,
-      type: 'High Commission'
+      id: 'vcomm_kotak811',
+      title: 'Kotak 811 Zero Balance Savings Account',
+      category: 'Banking / vCommission',
+      points: 2500,
+      rewardValue: '₹25.00 Value',
+      desc: 'Open a verified zero-balance digital bank account online.',
+      url: 'https://vcommission.com/aff_c?offer_id=kotak811',
+      seconds: 60
     },
     {
-      id: 'cpa_offer_2',
-      title: 'Instant Credit Score Check Partner',
-      points: 400,
-      seconds: 60,
-      rewardText: '₹4.00 Value',
-      url: smartlinkUrl,
-      type: 'High Commission'
+      id: 'vcomm_angelone',
+      title: 'Angel One Free Demat Account Opening',
+      category: 'FinTech / vCommission',
+      points: 2000,
+      rewardValue: '₹20.00 Value',
+      desc: 'Sign up with Aadhaar KYC for a lifetime free Demat account.',
+      url: 'https://vcommission.com/aff_c?offer_id=angelone',
+      seconds: 60
     },
     {
-      id: 'cpa_offer_3',
-      title: 'Verified Cashback Portal Sign Up',
-      points: 350,
-      seconds: 60,
-      rewardText: '₹3.50 Value',
-      url: smartlinkUrl,
-      type: 'High Commission'
+      id: 'vcomm_aubank_cc',
+      title: 'AU Small Finance Bank Lifetime Free Credit Card',
+      category: 'Credit Cards / vCommission',
+      points: 3500,
+      rewardValue: '₹35.00 Value',
+      desc: 'Check pre-approved eligibility for lifetime free credit card.',
+      url: 'https://vcommission.com/aff_c?offer_id=aubank_cc',
+      seconds: 60
+    },
+    {
+      id: 'vcomm_indusind',
+      title: 'IndusInd Bank Instant Digital Account',
+      category: 'Banking / vCommission',
+      points: 1800,
+      rewardValue: '₹18.00 Value',
+      desc: 'Instant account opening with zero balance requirement.',
+      url: 'https://vcommission.com/aff_c?offer_id=indusind',
+      seconds: 60
+    },
+    {
+      id: 'vcomm_bajaj_finserv',
+      title: 'Bajaj Finserv Insta EMI Card Check',
+      category: 'Finance / vCommission',
+      points: 1500,
+      rewardValue: '₹15.00 Value',
+      desc: 'Apply online and activate up to ₹2,00,000 instant credit limit.',
+      url: 'https://vcommission.com/aff_c?offer_id=bajaj_emi',
+      seconds: 60
     }
   ];
 
@@ -71,7 +94,7 @@ export default function TasksPage() {
     loadData();
   }, [router]);
 
-  // Mandatory 60s view & Tab close anti-cheat
+  // Anti-Cheat: 60s Stay & Premature Tab Close Detection
   useEffect(() => {
     let timer;
     if (activeTask && secondsLeft > 0) {
@@ -79,7 +102,7 @@ export default function TasksPage() {
         if (adWindowRef.current && adWindowRef.current.closed) {
           setStatusMsg({
             type: 'error',
-            text: 'Offer tab ventane close chesaru! Poorthiga 60 seconds aagalsinde. Task reset aindi.'
+            text: 'Offer tab was closed prematurely! 60 seconds continuous viewing is required. Task cancelled.'
           });
           setActiveTask(null);
           setSecondsLeft(0);
@@ -96,7 +119,7 @@ export default function TasksPage() {
     const win = window.open(task.url, '_blank', 'noopener=false');
     adWindowRef.current = win;
     setActiveTask(task);
-    setSecondsLeft(task.seconds);
+    setSecondsLeft(task.seconds || 60);
   };
 
   const handleClaimPoints = async () => {
@@ -105,8 +128,7 @@ export default function TasksPage() {
     setStatusMsg(null);
 
     try {
-      const backendUrl = 'https://rewards-app-backend-lq2v.onrender.com';
-      const res = await fetch(`${backendUrl}/api/tasks/claim`, {
+      const res = await fetch('https://rewards-app-backend-lq2v.onrender.com/api/tasks/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -118,13 +140,13 @@ export default function TasksPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Points claim failed');
+        throw new Error(data.message || 'Task claim failed');
       }
 
       setUser(data.user);
       setStatusMsg({
         type: 'success',
-        text: `🎉 +${activeTask.points} Points direct ga mee PostgreSQL DB balance ki add ayyayi!`
+        text: `+${activeTask.points} Points credited directly to PostgreSQL database!`
       });
       setActiveTask(null);
 
@@ -141,12 +163,12 @@ export default function TasksPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-white">
-        <p className="text-xs text-[#94A3B8]">Loading live balance from DB...</p>
+        <p className="text-xs text-[#94A3B8]">Loading tasks from database...</p>
       </div>
     );
   }
 
-  const tasksToDisplay = activeTab === 'smartlinks' ? smartlinkTasks : highCommissionOffers;
+  const tasksToDisplay = activeTab === 'daily_ads' ? dailyAdTasks : vCommissionOffers;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-28 px-4 pt-4">
@@ -156,8 +178,8 @@ export default function TasksPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white">Daily Tasks Hub</h1>
-          <p className="text-xs text-[#94A3B8]">Complete tasks to claim ₹49 Data Pack (4,900 pts)</p>
+          <h1 className="text-xl sm:text-2xl font-black text-white">Earn Rewards</h1>
+          <p className="text-xs text-[#94A3B8]">Complete tasks to claim the ₹49 Unlimited Data Pack (4,900 pts)</p>
         </div>
         <div className="px-3 py-1.5 bg-[#1E1B4B] border border-[#6366F1]/30 rounded-xl text-right">
           <span className="text-[10px] text-[#94A3B8] block">Live Balance</span>
@@ -167,35 +189,41 @@ export default function TasksPage() {
 
       {statusMsg && (
         <div className={`p-4 rounded-xl text-xs text-center border font-medium ${
-          statusMsg.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+          statusMsg.type === 'success'
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+            : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
         }`}>
           {statusMsg.text}
         </div>
       )}
 
-      {/* 2 COMMISSION STREAM TABS */}
+      {/* DUAL CHANNEL NAVIGATION */}
       <div className="grid grid-cols-2 gap-2 p-1.5 bg-[#101522] border border-[#252C3D] rounded-2xl">
         <button
-          onClick={() => setActiveTab('smartlinks')}
+          onClick={() => setActiveTab('daily_ads')}
           className={`py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-            activeTab === 'smartlinks' ? 'bg-[#6366F1] text-white shadow-md' : 'text-[#94A3B8] hover:text-white'
+            activeTab === 'daily_ads'
+              ? 'bg-[#6366F1] text-white shadow-md'
+              : 'text-[#94A3B8] hover:text-white'
           }`}
         >
-          <Zap size={14} /> 60s Ad Tasks (Daily 130)
+          <Zap size={14} /> 130 Daily Ads (38 pts each)
         </button>
         <button
-          onClick={() => setActiveTab('partner')}
+          onClick={() => setActiveTab('vcomm')}
           className={`py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 ${
-            activeTab === 'partner' ? 'bg-amber-500 text-black shadow-md' : 'text-[#94A3B8] hover:text-white'
+            activeTab === 'vcomm'
+              ? 'bg-amber-500 text-black shadow-md'
+              : 'text-[#94A3B8] hover:text-white'
           }`}
         >
-          <Flame size={14} /> High-Commission Offers
+          <Flame size={14} /> vCommission Campaigns
         </button>
       </div>
 
-      {/* ACTIVE RUNNING TASK BANNER */}
+      {/* ACTIVE 60s RUNNING TASK BANNER */}
       {activeTask && (
-        <div className="p-5 bg-[#1E1B4B] border-2 border-[#6366F1] rounded-2xl space-y-3 shadow-xl">
+        <div className="p-5 bg-gradient-to-r from-[#1E1B4B] to-[#101522] border-2 border-[#6366F1] rounded-2xl space-y-3 shadow-xl">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-white flex items-center gap-2">
               <Clock size={16} className="text-[#818CF8] animate-spin" /> {activeTask.title}
@@ -205,9 +233,9 @@ export default function TasksPage() {
 
           <p className="text-xs text-[#94A3B8]">
             {secondsLeft > 0 ? (
-              <span>Ad page open lo unchandi: <strong className="text-amber-400 text-sm">{secondsLeft}s</strong></span>
+              <span>Keep offer tab open: <strong className="text-amber-400 text-sm">{secondsLeft}s</strong> remaining</span>
             ) : (
-              <span className="text-emerald-400 font-bold">✅ 60 seconds finished! Claim your points below.</span>
+              <span className="text-emerald-400 font-bold">60 seconds finished! Claim your points below.</span>
             )}
           </p>
 
@@ -220,23 +248,47 @@ export default function TasksPage() {
                 : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg'
             }`}
           >
-            <CheckCircle size={15} /> {claiming ? 'Updating DB...' : `Claim ${activeTask.points} Points`}
+            <CheckCircle size={15} /> {claiming ? 'Updating Database...' : `Claim ${activeTask.points} Points`}
           </button>
         </div>
       )}
 
       {/* TASK LIST */}
       <div className="space-y-3">
+        <div className="flex items-center justify-between text-xs text-[#94A3B8]">
+          <span className="uppercase font-bold tracking-wider">
+            {activeTab === 'daily_ads' ? 'Daily Adsterra Tasks Pool (130)' : 'High-Ticket vCommission Offers'}
+          </span>
+          <span>{tasksToDisplay.length} Available</span>
+        </div>
+
         {tasksToDisplay.map((t) => (
-          <div key={t.id} className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-2xl flex items-center justify-between transition">
-            <div className="space-y-0.5">
-              <h3 className="text-sm font-bold text-white">{t.title}</h3>
-              <p className="text-xs text-[#94A3B8]">60s Stay • Instant DB Credit</p>
-              <div className="flex items-center gap-2 pt-1">
+          <div
+            key={t.id}
+            className="p-4 bg-[#101522] border border-[#252C3D] hover:border-[#6366F1]/50 rounded-2xl flex items-center justify-between transition"
+          >
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white">{t.title}</span>
+                {t.badge && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#6366F1]/20 text-[#818CF8] border border-[#6366F1]/30 font-semibold">
+                    {t.badge}
+                  </span>
+                )}
+                {t.category && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
+                    {t.category}
+                  </span>
+                )}
+              </div>
+              {t.desc && <p className="text-xs text-[#94A3B8]">{t.desc}</p>}
+              <div className="flex items-center gap-2 pt-0.5">
                 <span className="text-xs font-bold text-emerald-400">+{t.points} Points</span>
-                {t.rewardText && <span className="text-[10px] text-amber-400 font-semibold">({t.rewardText})</span>}
+                {t.rewardValue && <span className="text-[10px] text-amber-400 font-semibold">({t.rewardValue})</span>}
+                <span className="text-[10px] text-[#94A3B8]">• 60s View Required</span>
               </div>
             </div>
+
             <button
               onClick={() => handleStartTask(t)}
               disabled={activeTask !== null}
