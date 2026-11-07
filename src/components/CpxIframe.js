@@ -9,7 +9,6 @@ export default function CpxIframe({ user }) {
   const userId = user?.id || cleanPhone || 'guest';
   const username = encodeURIComponent(user?.phone || 'User');
 
-  // CPX Direct Iframe URL (Using clean internal ID and phone)
   const iframeUrl = `https://offers.cpx-research.com/index.php?app_id=${APP_ID}&ext_user_id=${userId}&username=${username}&subid_1=${userId}&subid_2=${cleanPhone}`;
 
   return (
@@ -23,11 +22,11 @@ export default function CpxIframe({ user }) {
             <h2 className="text-sm font-black text-white flex items-center gap-2">
               CPX Research Surveys
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                Live Iframe
+                Live
               </span>
             </h2>
             <p className="text-[11px] text-[#94A3B8]">
-              Complete surveys directly inside the app. Rewards auto-credit to your live balance.
+              Surveys complete chesi direct ga wallet points pondandi.
             </p>
           </div>
         </div>
@@ -40,7 +39,6 @@ export default function CpxIframe({ user }) {
         </button>
       </div>
 
-      {/* Loading Indicator */}
       {loading && (
         <div className="flex items-center justify-center py-10 gap-2 text-xs text-[#94A3B8]">
           <RefreshCw className="animate-spin text-indigo-500" size={16} />
@@ -48,7 +46,6 @@ export default function CpxIframe({ user }) {
         </div>
       )}
 
-      {/* Embedded Responsive Iframe */}
       <div className="w-full overflow-hidden rounded-xl bg-[#0B0F17] border border-[#252C3D]">
         <iframe
           src={iframeUrl}
