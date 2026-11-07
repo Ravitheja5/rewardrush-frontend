@@ -1,3 +1,4 @@
+import DailyVideoTask from "@/components/DailyVideoTask";
 import CpxSurveysCard from "../components/CpxSurveysCard";
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
